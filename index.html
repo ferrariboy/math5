@@ -321,23 +321,25 @@
              :class="calcLocked() ? 'bg-slate-100 text-slate-800' : 'bg-emerald-100 text-emerald-900'">
           <svg x-show="calcLocked()" class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 118 0v3"/></svg>
           <svg x-show="!calcLocked()" class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 017.5-2"/></svg>
-          <span x-math="calcLocked() ? 'Calculator locked here. Use your brain!' : 'Calculator unlocked here.'"></span>
+          <span class="flex-1" x-math="calcLocked() ? 'Calculator locked here. Use your brain!' : (calcUnlock ? 'Calculator unlocked by you.' : 'Calculator unlocked here.')"></span>
+          <button type="button" class="min-h-[48px] shrink-0 rounded-xl border-2 border-slate-900/30 bg-white px-3 text-base font-bold hover:bg-amber-100 active:scale-95 transition"
+                  x-show="calcLocked() || calcUnlock" @click="sounds.playClick(); toggleCalcUnlock()" x-math="calcUnlock ? 'Lock it again' : 'Unlock calculator'"></button>
         </div>
       </section>
 
       <!-- SUB TABS -->
-      <div class="mt-5 grid grid-cols-3 gap-2 rounded-2xl bg-white border-2 border-slate-900/10 p-2" role="tablist" aria-label="Module sections">
+      <div class="mt-5 grid grid-cols-4 gap-1.5 rounded-2xl bg-white border-2 border-slate-900/10 p-1.5" role="tablist" aria-label="Module sections">
         <template x-for="t in tabs" :key="t.id">
           <button type="button" role="tab"
                   :id="'tab-' + t.id"
-                  class="min-h-[56px] rounded-xl px-2 py-2 text-lg font-bold leading-tight transition active:scale-95 flex flex-col items-center justify-center gap-0.5"
+                  class="min-h-[56px] rounded-xl px-1 py-2 text-base sm:text-lg font-bold leading-tight transition active:scale-95 flex flex-col items-center justify-center gap-0.5"
                   :class="tab === t.id ? 'bg-indigo-700 text-white shadow' : 'bg-transparent text-slate-800 hover:bg-amber-100'"
                   :aria-selected="(tab === t.id).toString()"
-                  :aria-controls="'panel-' + t.id"
+                  :aria-controls="t.id === 'test' ? 'panel-quest' : 'panel-' + t.id"
                   @click="sounds.playClick(); setTab(t.id)">
             <span class="sm:hidden" x-math="t.short"></span>
             <span class="hidden sm:inline" x-math="t.label"></span>
-            <span class="text-sm font-normal" x-show="isDone(currentModule, t.id)" :class="tab === t.id ? 'text-emerald-200' : 'text-emerald-700'">Complete</span>
+            <span class="text-sm font-normal" x-show="isDone(currentModule, t.id) && t.id !== 'sim'" :class="tab === t.id ? 'text-emerald-200' : 'text-emerald-700'">Complete</span>
           </button>
         </template>
       </div>
@@ -350,23 +352,47 @@
           <h3 class="text-2xl font-bold">Learn</h3>
           <p class="mt-1 text-lg text-slate-700">Watch it, listen to it, then try it.</p>
 
-          <!-- Animated worked example -->
-          <template x-if="scenes().length">
+          <!-- Words to know -->
+          <details class="mt-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50 p-3" open x-show="vocab().length">
+            <summary class="flex min-h-[48px] cursor-pointer items-center text-xl font-bold">Words to know</summary>
+            <dl class="mt-2 space-y-2">
+              <template x-for="(v, vi) in vocab()" :key="vi">
+                <div class="rounded-xl bg-white p-3">
+                  <dt class="text-xl font-bold text-emerald-800" x-math="v.w"></dt>
+                  <dd class="text-lg" x-math="v.m"></dd>
+                </div>
+              </template>
+            </dl>
+          </details>
+
+          <!-- Lesson chooser -->
+          <div class="mt-4 rounded-2xl border-2 border-indigo-200 bg-white p-3" x-show="scenes().length && tab === 'big'">
+            <p class="text-lg font-bold text-indigo-800" x-math="'Lesson ' + (lesson.sceneIdx + 1) + ' of ' + scenes().length"></p>
+            <h4 class="text-2xl font-bold leading-snug" x-math="scene().title"></h4>
+            <div class="mt-2 grid grid-cols-2 gap-2">
+              <button type="button" class="min-h-[48px] rounded-xl border-2 border-indigo-700 bg-white text-lg font-bold text-indigo-900 active:scale-95 transition disabled:opacity-40" :disabled="lesson.sceneIdx === 0" @click="sounds.playClick(); lessonNext(-1)">Previous lesson</button>
+              <button type="button" class="min-h-[48px] rounded-xl bg-indigo-700 text-lg font-bold text-white active:scale-95 transition disabled:opacity-40" :disabled="lesson.sceneIdx >= scenes().length - 1" @click="sounds.playClick(); lessonNext(1)">Next lesson</button>
+            </div>
+            <details class="mt-2">
+              <summary class="flex min-h-[48px] cursor-pointer items-center text-lg font-bold text-indigo-800">See all lessons</summary>
+              <ol class="mt-1 space-y-2">
+                <template x-for="(sc, si) in scenes()" :key="si">
+                  <li>
+                    <button type="button" class="min-h-[48px] w-full rounded-xl border-2 px-3 text-left text-lg font-bold active:scale-[0.98] transition"
+                            :class="lesson.sceneIdx === si ? 'border-indigo-700 bg-indigo-700 text-white' : 'border-indigo-200 bg-indigo-50 text-indigo-900'"
+                            @click="sounds.playClick(); lessonScene(si)" x-math="sc.title"></button>
+                  </li>
+                </template>
+              </ol>
+            </details>
+          </div>
+
+          <template x-if="scenes().length && tab === 'big'">
             <div id="lesson-player" class="mt-4 rounded-3xl border-4 border-indigo-700 bg-indigo-50 p-3 sm:p-4">
               <div class="flex items-center justify-between gap-2">
-                <h4 class="text-2xl font-bold">Watch and listen</h4>
+                <h4 class="text-2xl font-bold" x-math="'Watch and listen'"></h4>
                 <span class="text-lg font-bold text-indigo-800" x-math="'Step ' + (lesson.i + 1) + ' of ' + steps().length"></span>
               </div>
-
-              <div class="mt-2 flex flex-wrap gap-2" x-show="scenes().length > 1" role="group" aria-label="Choose an example">
-                <template x-for="(sc, si) in scenes()" :key="si">
-                  <button type="button" class="min-h-[48px] rounded-xl border-2 px-4 text-lg font-bold active:scale-95 transition"
-                          :class="lesson.sceneIdx === si ? 'bg-indigo-700 border-indigo-700 text-white' : 'bg-white border-indigo-300 text-indigo-900'"
-                          :aria-pressed="(lesson.sceneIdx === si).toString()"
-                          @click="sounds.playClick(); lessonScene(si)" x-math="sc.title"></button>
-                </template>
-              </div>
-              <p class="mt-2 text-xl font-bold" x-show="scenes().length === 1" x-math="scene().title"></p>
 
               <!-- Stage -->
               <div class="mt-3 min-h-[230px] rounded-2xl bg-white border-2 border-slate-900/10 p-3 flex items-center justify-center overflow-x-auto" data-noread>
@@ -391,7 +417,7 @@
                             <p class="text-xl font-bold" x-math="r.label"></p>
                             <div class="mt-1 flex items-stretch gap-1">
                               <template x-for="(sg, si) in r.segs" :key="si">
-                                <div class="seg-in flex h-16 items-center justify-center rounded-lg border-4 border-slate-900 text-3xl font-bold text-slate-900"
+                                <div class="seg-in flex h-16 items-center justify-center rounded-lg border-4 border-slate-900 text-2xl font-bold text-slate-900"
                                      :class="sg.cls" :style="'flex:0 0 calc(' + (100 / barsMax()) + '% - 4px); animation-delay:' + ((ri * 3 + si) * 110) + 'ms'" x-math="sg.text || ''"></div>
                               </template>
                             </div>
@@ -402,7 +428,7 @@
                     </template>
 
                     <template x-if="step().kind === 'grid'">
-                      <div class="grid gap-1" :style="'grid-template-columns: repeat(' + step().cols + ', minmax(0, 1fr)); width: min(100%, ' + (step().cols * 5) + 'rem)'">
+                      <div class="grid gap-1" :style="'grid-template-columns: repeat(' + step().cols + ', minmax(0, 1fr)); width: min(100%, ' + Math.min(step().cols * 5, 30) + 'rem)'">
                         <template x-for="c in (step().cols * step().rows)" :key="c">
                           <span class="aspect-[4/3] rounded-lg border-2 border-slate-900/30" :class="cellCls(step(), c - 1) + (cellCls(step(), c - 1) !== 'bg-slate-100' ? ' cell-in' : '')" :style="'animation-delay:' + (((c - 1) % step().cols) * 90) + 'ms'"></span>
                         </template>
@@ -413,12 +439,36 @@
                       <pre class="drawing rounded-xl bg-slate-900 p-3 text-xl sm:text-3xl leading-snug font-mono text-emerald-100 max-w-full overflow-x-auto"><template x-for="(ln, li) in step().lines" :key="li"><span class="block rounded px-1" :class="li >= step().hiFrom ? 'bg-amber-300 text-slate-900' : ''" x-math="ln || ' '"></span></template></pre>
                     </template>
 
+                    <template x-if="step().kind === 'note'">
+                      <div class="w-full space-y-2">
+                        <p class="text-2xl font-bold text-indigo-800 fade-up" x-math="step().title"></p>
+                        <template x-for="(pt, pi) in step().points" :key="pi">
+                          <p class="rounded-xl bg-amber-100 p-3 text-xl font-bold fade-up" :style="'animation-delay:' + ((pi + 1) * 250) + 'ms'" x-math="pt"></p>
+                        </template>
+                      </div>
+                    </template>
+
+                    <template x-if="step().kind === 'groups'">
+                      <div class="w-full">
+                        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                          <template x-for="gi in step().groups" :key="gi">
+                            <div class="cell-in flex flex-wrap justify-center gap-1 rounded-xl border-4 p-2" :class="(gi - 1) < step().take ? 'border-amber-500 bg-amber-100' : 'border-slate-300 bg-slate-50'" :style="'animation-delay:' + ((gi - 1) * 80) + 'ms'">
+                              <template x-for="di in step().per" :key="di">
+                                <span class="h-5 w-5 rounded-full" :class="(gi - 1) < step().take ? 'bg-amber-500' : 'bg-slate-400'"></span>
+                              </template>
+                            </div>
+                          </template>
+                        </div>
+                        <p class="mt-2 text-center text-lg font-bold text-indigo-800 fade-up" x-show="step().tag" x-math="step().tag"></p>
+                      </div>
+                    </template>
+
                   </div>
                 </template>
               </div>
 
               <!-- Caption -->
-              <p class="mt-3 min-h-[6.5rem] rounded-2xl bg-slate-900 p-4 text-2xl font-bold leading-snug text-white" aria-live="polite" id="lesson-caption">
+              <p class="mt-3 min-h-[6.5rem] rounded-2xl bg-slate-900 p-4 text-2xl font-bold leading-snug text-white" aria-live="polite">
                 <template x-for="(w, wi) in capWords()" :key="wi"><span class="rounded px-0.5" :class="lesson.wordIdx === wi ? 'bg-amber-300 text-slate-900' : ''" x-math="w + ' '"></span></template>
               </p>
 
@@ -441,6 +491,26 @@
               </div>
             </div>
           </template>
+
+          <!-- Written explanation for this lesson -->
+          <div class="mt-4 space-y-3" x-show="scenes().length && scene().explain">
+            <div class="rounded-2xl border-l-8 border-emerald-500 bg-emerald-50 p-4">
+              <p class="text-base font-bold text-emerald-800">In plain words</p>
+              <template x-for="(p, pi) in (scene().explain || [])" :key="pi"><p class="mt-1 text-lg" x-math="p"></p></template>
+            </div>
+            <div class="rounded-2xl border-l-8 border-amber-500 bg-amber-50 p-4" x-show="scene().rule">
+              <p class="text-base font-bold text-amber-800">Remember the rule</p>
+              <p class="text-xl font-bold" x-math="scene().rule"></p>
+            </div>
+            <div class="rounded-2xl border-l-8 border-red-500 bg-red-50 p-4" x-show="scene().mistake">
+              <p class="text-base font-bold text-red-800">Watch out</p>
+              <p class="text-lg" x-math="scene().mistake"></p>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" class="min-h-[56px] rounded-xl bg-indigo-700 text-lg font-bold text-white active:scale-95 transition disabled:opacity-40" :disabled="lesson.sceneIdx >= scenes().length - 1" @click="sounds.playClick(); lessonNext(1)">Next lesson</button>
+              <button type="button" class="min-h-[56px] rounded-xl bg-emerald-600 text-lg font-bold text-white active:scale-95 transition" @click="sounds.playClick(); setTab('quest')">Go practice</button>
+            </div>
+          </div>
 
           <button type="button" class="mt-4 min-h-[48px] w-full rounded-xl border-2 border-slate-900/20 bg-amber-100 px-4 text-lg font-bold hover:bg-amber-200 active:scale-95 transition"
                   x-show="scenes().length && activeModule().bigIdea"
@@ -557,8 +627,17 @@
 
           <div id="engine-sim" class="mt-4 space-y-5" data-engine="sim" :data-module="currentModule">
 
+            <!-- TOOL CHOOSER -->
+            <div class="flex flex-wrap gap-2" x-show="exTools().length > 1" role="group" aria-label="Choose a tool">
+              <template x-for="t in exTools()" :key="t.id">
+                <button type="button" class="min-h-[48px] rounded-xl border-2 px-4 text-lg font-bold active:scale-95 transition"
+                        :class="exTool === t.id ? 'bg-indigo-700 border-indigo-700 text-white' : 'bg-white border-indigo-300 text-indigo-900'"
+                        :aria-pressed="(exTool === t.id).toString()" @click="sounds.playClick(); setExTool(t.id)" x-math="t.title"></button>
+              </template>
+            </div>
+
             <!-- CONTROLS -->
-            <div class="rounded-2xl bg-slate-50 border-2 border-slate-900/10 p-4 space-y-5" role="group" aria-label="Simulator controls">
+            <div class="rounded-2xl bg-slate-50 border-2 border-slate-900/10 p-4 space-y-5" role="group" aria-label="Controls" x-show="simControls().length">
               <template x-for="c in simControls()" :key="simGroup() + c.key">
                 <div>
                   <div class="flex items-center justify-between gap-3">
@@ -590,7 +669,7 @@
                 </div>
               </template>
 
-              <button type="button" class="w-full min-h-[48px] rounded-xl border-2 border-slate-900/30 bg-white text-lg font-bold hover:bg-amber-100 active:scale-95 transition" @click="sounds.playClick(); resetSim()">Reset the bars</button>
+              <button type="button" class="w-full min-h-[48px] rounded-xl border-2 border-slate-900/30 bg-white text-lg font-bold hover:bg-amber-100 active:scale-95 transition" @click="sounds.playClick(); resetSim()">Reset</button>
             </div>
 
             <!-- STAGE -->
@@ -737,6 +816,146 @@
                   </div>
                 </div>
               </template>
+
+              <!-- MODULE 1 AND 4: place value chart -->
+              <template x-if="simGroup() === 'places'">
+                <div>
+                  <label for="place-input" class="block text-lg font-bold">Type a number</label>
+                  <input id="place-input" type="text" inputmode="decimal" maxlength="14" autocomplete="off"
+                         class="mt-1 w-full min-h-[56px] rounded-xl border-2 border-slate-900/30 bg-white px-4 text-2xl font-bold focus:border-indigo-600"
+                         x-model="placeText" @input="placeClean()" placeholder="Try 4589201 or 3.482">
+                  <div class="mt-3 overflow-x-auto rounded-xl border-2 border-slate-900/20" tabindex="0">
+                    <table class="w-full text-center">
+                      <thead>
+                        <tr class="bg-indigo-100 text-base">
+                          <template x-for="(c, ci) in placeCols()" :key="ci">
+                            <th class="px-2 py-2 font-bold leading-tight" :class="c.dot ? 'w-4' : 'min-w-[5.5rem]'" x-math="c.name"></th>
+                          </template>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <template x-for="(c, ci) in placeCols()" :key="ci">
+                            <td class="px-2 py-3 text-4xl font-bold" :class="c.dot ? 'text-slate-500' : 'bg-amber-50'" x-math="c.d"></td>
+                          </template>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <ul class="mt-3 space-y-2">
+                    <template x-for="(pv, pi) in placeValues()" :key="pi">
+                      <li class="rounded-xl bg-slate-100 p-3 text-lg" x-math="pv"></li>
+                    </template>
+                  </ul>
+                  <div class="mt-4 rounded-2xl bg-emerald-50 border-2 border-emerald-500 p-3">
+                    <label for="place-round" class="block text-lg font-bold">Round to the nearest</label>
+                    <select id="place-round" class="mt-1 w-full min-h-[56px] rounded-xl border-2 border-slate-900/30 bg-white px-3 text-xl font-bold" x-model="placeRoundTo">
+                      <template x-for="o in placeRoundOptions()" :key="o.v">
+                        <option :value="o.v" x-math="o.n"></option>
+                      </template>
+                    </select>
+                    <p class="mt-2 text-xl font-bold" x-math="placeRoundText()"></p>
+                  </div>
+                </div>
+              </template>
+
+              <!-- MODULE 2: sharing machine -->
+              <template x-if="simGroup() === 'divshare'">
+                <div>
+                  <p class="text-center text-3xl font-bold" x-math="sim.tot + ' ÷ ' + sim.grp + ' = ' + Math.floor(sim.tot / sim.grp) + (sim.tot % sim.grp ? ' remainder ' + (sim.tot % sim.grp) : '')"></p>
+                  <div class="mt-3 grid gap-2" :style="'grid-template-columns: repeat(' + Math.min(sim.grp, 4) + ', minmax(0, 1fr))'">
+                    <template x-for="g in sim.grp" :key="g">
+                      <div class="flex min-h-[64px] flex-wrap content-start justify-center gap-1 rounded-xl border-4 border-indigo-400 bg-indigo-50 p-2">
+                        <template x-for="d in Math.floor(sim.tot / sim.grp)" :key="d">
+                          <span class="h-4 w-4 rounded-full bg-indigo-600"></span>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+                  <div class="mt-3 rounded-xl bg-amber-100 p-3" x-show="sim.tot % sim.grp > 0">
+                    <p class="text-lg font-bold">Left over. Too few to share again.</p>
+                    <div class="mt-1 flex flex-wrap gap-1">
+                      <template x-for="d in (sim.tot % sim.grp)" :key="d"><span class="h-4 w-4 rounded-full bg-amber-600"></span></template>
+                    </div>
+                  </div>
+                  <p class="mt-3 rounded-xl bg-slate-100 p-3 text-xl font-bold" x-math="'Check: ' + Math.floor(sim.tot / sim.grp) + ' × ' + sim.grp + ' + ' + (sim.tot % sim.grp) + ' = ' + sim.tot"></p>
+                </div>
+              </template>
+
+              <!-- MODULE 3: fraction of an amount -->
+              <template x-if="simGroup() === 'fracamt'">
+                <div>
+                  <p class="text-center text-3xl font-bold" x-math="sim.num + '/' + sim.den + ' of ' + (sim.den * sim.per) + ' = ' + (sim.num * sim.per)"></p>
+                  <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    <template x-for="g in sim.den" :key="g">
+                      <div class="flex flex-wrap justify-center gap-1 rounded-xl border-4 p-2 transition-colors" :class="g <= sim.num ? 'border-amber-500 bg-amber-100' : 'border-slate-300 bg-slate-50'">
+                        <template x-for="d in sim.per" :key="d"><span class="h-5 w-5 rounded-full" :class="g <= sim.num ? 'bg-amber-500' : 'bg-slate-400'"></span></template>
+                      </div>
+                    </template>
+                  </div>
+                  <div class="mt-3 space-y-2 rounded-xl bg-slate-100 p-3 text-xl font-bold">
+                    <p x-math="'Step 1. Divide by the bottom: ' + (sim.den * sim.per) + ' ÷ ' + sim.den + ' = ' + sim.per"></p>
+                    <p x-math="'Step 2. Multiply by the top: ' + sim.per + ' × ' + sim.num + ' = ' + (sim.num * sim.per)"></p>
+                  </div>
+                </div>
+              </template>
+
+              <!-- MODULE 3: equal fractions -->
+              <template x-if="simGroup() === 'eqfrac'">
+                <div class="space-y-4">
+                  <div>
+                    <p class="text-xl font-bold" x-math="sim.num + '/' + sim.den"></p>
+                    <div class="mt-1 flex h-14 overflow-hidden rounded-lg border-4 border-slate-900">
+                      <template x-for="i in sim.den" :key="i"><div class="flex-1 border-r-2 border-white transition-colors last:border-r-0" :class="i <= sim.num ? 'bg-emerald-500' : 'bg-slate-200'"></div></template>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-xl font-bold" x-math="(sim.num * sim.mult) + '/' + (sim.den * sim.mult)"></p>
+                    <div class="mt-1 flex h-14 overflow-hidden rounded-lg border-4 border-slate-900">
+                      <template x-for="i in (sim.den * sim.mult)" :key="i"><div class="flex-1 border-r border-white transition-colors last:border-r-0" :class="i <= sim.num * sim.mult ? 'bg-emerald-500' : 'bg-slate-200'"></div></template>
+                    </div>
+                  </div>
+                  <div class="rounded-xl bg-slate-100 p-3 text-xl font-bold">
+                    <p x-math="sim.num + ' × ' + sim.mult + ' = ' + (sim.num * sim.mult)"></p>
+                    <p x-math="sim.den + ' × ' + sim.mult + ' = ' + (sim.den * sim.mult)"></p>
+                    <p class="mt-1 text-emerald-800" x-math="sim.num + '/' + sim.den + ' = ' + (sim.num * sim.mult) + '/' + (sim.den * sim.mult)"></p>
+                  </div>
+                </div>
+              </template>
+
+              <!-- MODULE 6: percent helper -->
+              <template x-if="simGroup() === 'percent'">
+                <div>
+                  <p class="text-center text-3xl font-bold" x-math="sim.pct + '% of $' + sim.price + ' = $' + pctAmount()"></p>
+                  <div class="mx-auto mt-3 grid max-w-xs grid-cols-10 gap-0.5" role="img" :aria-label="sim.pct + ' out of 100 squares colored'">
+                    <template x-for="c in 100" :key="c"><span class="aspect-square rounded-sm transition-colors" :class="c <= sim.pct ? 'bg-emerald-500' : 'bg-slate-200'"></span></template>
+                  </div>
+                  <div class="mt-3 grid grid-cols-2 gap-3 text-center">
+                    <div class="rounded-xl bg-amber-100 p-3"><p class="text-base font-bold text-slate-700">Take off</p><p class="text-3xl font-bold" x-math="'$' + pctAmount()"></p></div>
+                    <div class="rounded-xl bg-emerald-100 p-3"><p class="text-base font-bold text-slate-700">You pay</p><p class="text-3xl font-bold text-emerald-800" x-math="'$' + pctLeft()"></p></div>
+                  </div>
+                  <p class="mt-3 rounded-xl bg-slate-100 p-3 text-xl font-bold" x-math="sim.pct + '% is ' + sim.pct + '/100. So $' + sim.price + ' × ' + sim.pct + ' ÷ 100 = $' + pctAmount()"></p>
+                </div>
+              </template>
+
+              <!-- MODULE 7: angle maker -->
+              <template x-if="simGroup() === 'angles'">
+                <div>
+                  <svg viewBox="0 0 240 130" class="mx-auto w-full max-w-md" role="img" :aria-label="'A straight line split into ' + sim.ang + ' degrees and ' + (180 - sim.ang) + ' degrees'">
+                    <line x1="10" y1="110" x2="230" y2="110" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="120" y1="110" :x2="angPt(95).x" :y2="angPt(95).y" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+                    <path :d="'M 150 110 A 30 30 0 0 0 ' + angPt(30).x + ' ' + angPt(30).y + ' L 120 110 Z'" fill="rgba(16,185,129,0.35)" stroke="#047857" stroke-width="3"/>
+                    <path :d="'M ' + angPt(44).x + ' ' + angPt(44).y + ' A 44 44 0 0 0 76 110 L 120 110 Z'" fill="rgba(79,70,229,0.3)" stroke="#4338ca" stroke-width="3"/>
+                    <text :x="labelPt(sim.ang / 2).x" :y="labelPt(sim.ang / 2).y" font-size="15" font-weight="700" text-anchor="middle" fill="#065f46" x-math="sim.ang + '°'"></text>
+                    <text :x="labelPt(sim.ang + (180 - sim.ang) / 2).x" :y="labelPt(sim.ang + (180 - sim.ang) / 2).y" font-size="15" font-weight="700" text-anchor="middle" fill="#3730a3" x-math="(180 - sim.ang) + '°'"></text>
+                  </svg>
+                  <div class="mt-3 grid grid-cols-2 gap-3 text-center">
+                    <div class="rounded-xl bg-emerald-100 p-3"><p class="text-base font-bold text-slate-700">Green angle</p><p class="text-3xl font-bold text-emerald-800" x-math="sim.ang + '°'"></p><p class="text-lg font-bold" x-math="angName(sim.ang)"></p></div>
+                    <div class="rounded-xl bg-indigo-100 p-3"><p class="text-base font-bold text-slate-700">Purple angle</p><p class="text-3xl font-bold text-indigo-800" x-math="(180 - sim.ang) + '°'"></p><p class="text-lg font-bold" x-math="angName(180 - sim.ang)"></p></div>
+                  </div>
+                  <p class="mt-3 rounded-xl bg-slate-100 p-3 text-xl font-bold" x-math="sim.ang + '° + ' + (180 - sim.ang) + '° = 180°'"></p>
+                </div>
+              </template>
             </div>
 
             <!-- PLAIN WORDS AND CHALLENGE -->
@@ -756,32 +975,158 @@
         </section>
 
         <!-- ============ MASTERY QUEST ============ -->
-        <section id="panel-quest" role="tabpanel" aria-labelledby="tab-quest" x-show="tab === 'quest'" class="rounded-3xl bg-white border-2 border-slate-900/10 p-5 sm:p-7 shadow-sm">
-          <h3 class="text-2xl font-bold">Practice</h3>
-          <p class="mt-1 text-lg text-slate-700">Easy questions first. Score 70 percent to finish.</p>
+        <section id="panel-quest" role="tabpanel" aria-labelledby="tab-quest" x-show="tab === 'quest' || tab === 'test'" class="rounded-3xl bg-white border-2 border-slate-900/10 p-5 sm:p-7 shadow-sm">
+          <h3 class="text-2xl font-bold" x-math="q.mode === 'test' ? 'Test' : 'Practice'"></h3>
+          <p class="mt-1 text-lg text-slate-700" x-math="q.mode === 'test' ? '25 questions. No hints. One try each.' : '10 questions that start easy. Tap Teach me any time.'"></p>
 
           <!-- Quest engine -->
           <template x-if="hasQuest(currentModule)">
             <div class="mt-4">
 
+              <!-- Test start card -->
+              <template x-if="!q.started">
+                <div class="rounded-2xl border-2 border-indigo-300 bg-indigo-50 p-5 space-y-3">
+                  <h4 class="text-2xl font-bold">Ready for the test?</h4>
+                  <ul class="list-disc space-y-1 pl-6 text-lg">
+                    <li>25 questions on this whole module.</li>
+                    <li>No hints and no Teach me. You get one try on each.</li>
+                    <li>Score 70 percent to pass.</li>
+                    <li>You can redo the test as many times as you like. Every try has new numbers.</li>
+                  </ul>
+                  <p class="text-lg font-bold" x-math="'Your best test score: ' + (progress[currentModule].testBest === null || progress[currentModule].testBest === undefined ? 'none yet' : progress[currentModule].testBest + '%')"></p>
+                  <button type="button" class="w-full min-h-[64px] rounded-2xl bg-indigo-700 text-2xl font-bold text-white hover:bg-indigo-800 active:scale-95 transition" @click="sounds.playClick(); startTest()">Start the test</button>
+                  <p class="text-base text-slate-700">Tip: try the Practice tab first. It has hints and Teach me.</p>
+                </div>
+              </template>
+
               <!-- Progress row -->
-              <div class="flex items-center justify-between gap-3 mb-3">
-                <p class="text-lg font-bold" x-math="q.finished ? 'Quest finished' : 'Question ' + (q.idx + 1) + ' of ' + activeModule().quest.length"></p>
-                <div class="flex gap-2" aria-hidden="true">
-                  <template x-for="(item, i) in activeModule().quest" :key="i">
+              <div class="flex items-center justify-between gap-3 mb-3" x-show="q.started">
+                <p class="text-lg font-bold" x-math="q.finished ? (q.mode === 'test' ? 'Test finished' : 'Practice finished') : 'Question ' + (q.idx + 1) + ' of ' + q.set.length"></p>
+                <div class="flex flex-wrap justify-end gap-1.5" aria-hidden="true">
+                  <template x-for="(item, i) in q.set" :key="i">
                     <span class="h-4 w-4 rounded-full" :class="dotClass(i)"></span>
                   </template>
                 </div>
               </div>
 
               <!-- Active question -->
-              <template x-if="!q.finished && currentQ()">
+              <template x-if="q.started && !q.finished && currentQ()">
                 <div class="space-y-4">
 
                   <div class="rounded-2xl bg-indigo-50 border-2 border-indigo-200 p-4">
                     <p class="text-base font-bold text-indigo-800" x-math="currentQ().skill"></p>
                     <p class="mt-1 text-2xl font-bold leading-snug" x-math="currentQ().prompt"></p>
                   </div>
+
+                  <!-- Teach me -->
+                  <button type="button" x-show="q.mode === 'practice'"
+                          class="w-full min-h-[56px] rounded-xl border-2 border-emerald-600 bg-emerald-50 text-xl font-bold text-emerald-900 hover:bg-emerald-100 active:scale-95 transition"
+                          :aria-expanded="q.teach.toString()" @click="sounds.playClick(); toggleTeach()" x-math="q.teach ? 'Hide Teach me' : 'Teach me'"></button>
+          <template x-if="q.teach && q.mode === 'practice' && scenes().length">
+            <div id="teach-player" class="mt-4 rounded-3xl border-4 border-indigo-700 bg-indigo-50 p-3 sm:p-4">
+              <div class="flex items-center justify-between gap-2">
+                <h4 class="text-2xl font-bold" x-math="'Teach me'"></h4>
+                <span class="text-lg font-bold text-indigo-800" x-math="'Step ' + (teachL.i + 1) + ' of ' + steps().length"></span>
+              </div>
+
+              <!-- Stage -->
+              <div class="mt-3 min-h-[230px] rounded-2xl bg-white border-2 border-slate-900/10 p-3 flex items-center justify-center overflow-x-auto" data-noread>
+                <template x-for="k in [teachL.sceneIdx + '-' + teachL.i]" :key="k">
+                  <div class="w-full flex items-center justify-center">
+
+                    <template x-if="step().kind === 'expr'">
+                      <div class="flex flex-wrap items-start justify-center gap-x-1 gap-y-4 text-3xl sm:text-5xl font-bold">
+                        <template x-for="(tk, ti) in step().tokens" :key="ti">
+                          <span class="flex flex-col items-center">
+                            <span class="whitespace-pre-wrap rounded-xl px-1.5 py-1 fade-up" :class="tk.hi ? 'hi-token bg-amber-300 text-slate-900' : 'text-slate-900'" x-math="tk.t"></span>
+                            <span class="mt-1 text-base font-bold text-indigo-800 fade-up" x-show="tk.tag" x-math="tk.tag"></span>
+                          </span>
+                        </template>
+                      </div>
+                    </template>
+
+                    <template x-if="step().kind === 'bars'">
+                      <div class="w-full space-y-4">
+                        <template x-for="(r, ri) in step().rows" :key="ri">
+                          <div>
+                            <p class="text-xl font-bold" x-math="r.label"></p>
+                            <div class="mt-1 flex items-stretch gap-1">
+                              <template x-for="(sg, si) in r.segs" :key="si">
+                                <div class="seg-in flex h-16 items-center justify-center rounded-lg border-4 border-slate-900 text-2xl font-bold text-slate-900"
+                                     :class="sg.cls" :style="'flex:0 0 calc(' + (100 / barsMax()) + '% - 4px); animation-delay:' + ((ri * 3 + si) * 110) + 'ms'" x-math="sg.text || ''"></div>
+                              </template>
+                            </div>
+                            <p class="mt-1 text-xl font-bold text-indigo-800 fade-up" x-show="r.total" x-math="'Total: ' + r.total"></p>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+
+                    <template x-if="step().kind === 'grid'">
+                      <div class="grid gap-1" :style="'grid-template-columns: repeat(' + step().cols + ', minmax(0, 1fr)); width: min(100%, ' + Math.min(step().cols * 5, 30) + 'rem)'">
+                        <template x-for="c in (step().cols * step().rows)" :key="c">
+                          <span class="aspect-[4/3] rounded-lg border-2 border-slate-900/30" :class="cellCls(step(), c - 1) + (cellCls(step(), c - 1) !== 'bg-slate-100' ? ' cell-in' : '')" :style="'animation-delay:' + (((c - 1) % step().cols) * 90) + 'ms'"></span>
+                        </template>
+                      </div>
+                    </template>
+
+                    <template x-if="step().kind === 'lines'">
+                      <pre class="drawing rounded-xl bg-slate-900 p-3 text-xl sm:text-3xl leading-snug font-mono text-emerald-100 max-w-full overflow-x-auto"><template x-for="(ln, li) in step().lines" :key="li"><span class="block rounded px-1" :class="li >= step().hiFrom ? 'bg-amber-300 text-slate-900' : ''" x-math="ln || ' '"></span></template></pre>
+                    </template>
+
+                    <template x-if="step().kind === 'note'">
+                      <div class="w-full space-y-2">
+                        <p class="text-2xl font-bold text-indigo-800 fade-up" x-math="step().title"></p>
+                        <template x-for="(pt, pi) in step().points" :key="pi">
+                          <p class="rounded-xl bg-amber-100 p-3 text-xl font-bold fade-up" :style="'animation-delay:' + ((pi + 1) * 250) + 'ms'" x-math="pt"></p>
+                        </template>
+                      </div>
+                    </template>
+
+                    <template x-if="step().kind === 'groups'">
+                      <div class="w-full">
+                        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                          <template x-for="gi in step().groups" :key="gi">
+                            <div class="cell-in flex flex-wrap justify-center gap-1 rounded-xl border-4 p-2" :class="(gi - 1) < step().take ? 'border-amber-500 bg-amber-100' : 'border-slate-300 bg-slate-50'" :style="'animation-delay:' + ((gi - 1) * 80) + 'ms'">
+                              <template x-for="di in step().per" :key="di">
+                                <span class="h-5 w-5 rounded-full" :class="(gi - 1) < step().take ? 'bg-amber-500' : 'bg-slate-400'"></span>
+                              </template>
+                            </div>
+                          </template>
+                        </div>
+                        <p class="mt-2 text-center text-lg font-bold text-indigo-800 fade-up" x-show="step().tag" x-math="step().tag"></p>
+                      </div>
+                    </template>
+
+                  </div>
+                </template>
+              </div>
+
+              <!-- Caption -->
+              <p class="mt-3 min-h-[6.5rem] rounded-2xl bg-slate-900 p-4 text-2xl font-bold leading-snug text-white" aria-live="polite">
+                <template x-for="(w, wi) in capWords()" :key="wi"><span class="rounded px-0.5" :class="teachL.wordIdx === wi ? 'bg-amber-300 text-slate-900' : ''" x-math="w + ' '"></span></template>
+              </p>
+
+              <!-- Controls -->
+              <div class="mt-3 grid grid-cols-[1fr_2fr_1fr] gap-2">
+                <button type="button" class="min-h-[56px] rounded-xl border-2 border-indigo-700 bg-white text-lg font-bold text-indigo-900 active:scale-95 transition disabled:opacity-40"
+                        :disabled="teachL.i === 0" @click="sounds.playClick(); lessonGo(-1)" aria-label="Back one step">Back</button>
+                <button type="button" id="teach-play" class="min-h-[56px] rounded-xl bg-indigo-700 text-xl font-bold text-white hover:bg-indigo-800 active:scale-95 transition"
+                        @click="sounds.playClick(); lessonToggle()" x-math="teachL.playing ? 'Pause' : (teachL.i >= steps().length - 1 ? 'Watch again' : 'Play')"></button>
+                <button type="button" class="min-h-[56px] rounded-xl border-2 border-indigo-700 bg-white text-lg font-bold text-indigo-900 active:scale-95 transition disabled:opacity-40"
+                        :disabled="teachL.i >= steps().length - 1" @click="sounds.playClick(); lessonGo(1)" aria-label="Next step">Next</button>
+              </div>
+              <div class="mt-2 grid grid-cols-2 gap-2">
+                <button type="button" class="min-h-[48px] rounded-xl border-2 text-lg font-bold active:scale-95 transition"
+                        :class="teachL.voice ? 'bg-emerald-600 border-emerald-700 text-white' : 'bg-white border-slate-900/30 text-slate-900'"
+                        :aria-pressed="teachL.voice.toString()" @click="sounds.playClick(); lessonVoiceToggle()" x-math="teachL.voice ? 'Voice: On' : 'Voice: Off'"></button>
+                <button type="button" class="min-h-[48px] rounded-xl border-2 text-lg font-bold active:scale-95 transition"
+                        :class="teachL.slow ? 'bg-amber-400 border-amber-600 text-slate-900' : 'bg-white border-slate-900/30 text-slate-900'"
+                        :aria-pressed="teachL.slow.toString()" @click="sounds.playClick(); teachL.slow = !teachL.slow" x-math="teachL.slow ? 'Slow: On' : 'Slow: Off'"></button>
+              </div>
+            </div>
+          </template>
+
 
                   <!-- Multiple choice -->
                   <template x-if="currentQ().type === 'choice'">
@@ -841,7 +1186,7 @@
                   <div x-show="q.msg" data-feedback role="alert" class="rounded-xl bg-amber-100 border-2 border-amber-500 p-3 text-lg font-bold" x-math="q.msg"></div>
 
                   <!-- Wrong answer coaching -->
-                  <div x-show="q.tries > 0 && !isDone()" data-feedback class="rounded-2xl border-2 border-red-300 bg-red-50 p-4 space-y-3" aria-live="polite">
+                  <div x-show="q.tries > 0 && !isDone() && q.mode === 'practice'" data-feedback class="rounded-2xl border-2 border-red-300 bg-red-50 p-4 space-y-3" aria-live="polite">
                     <p class="text-xl font-bold text-red-900">Not quite yet. Let us look closer.</p>
                     <p x-show="q.trap" class="text-lg" x-math="q.trap"></p>
                     <p class="text-lg font-bold" x-math="currentQ().hint.nudge"></p>
@@ -891,7 +1236,7 @@
 
                   <!-- Solved or revealed -->
                   <div x-show="isDone()" data-feedback class="rounded-2xl border-2 p-4 space-y-3" :class="q.status === 'right' ? 'bg-emerald-50 border-emerald-500' : 'bg-amber-50 border-amber-500'" aria-live="polite">
-                    <p class="text-2xl font-bold" x-math="q.status === 'right' ? doneHeadline() : 'Here is the answer'"></p>
+                    <p class="text-2xl font-bold" x-math="q.status === 'right' ? doneHeadline() : (q.mode === 'test' ? 'Not this time. Here is the answer' : 'Here is the answer')"></p>
                     <p class="text-xl font-bold" x-math="'Answer: ' + currentQ().solution.answer"></p>
                     <p class="text-lg" x-math="currentQ().solution.work"></p>
                     <div class="rounded-xl bg-white border-l-8 border-emerald-500 p-3">
@@ -901,37 +1246,39 @@
                     <button type="button"
                             class="w-full min-h-[56px] rounded-xl bg-emerald-600 text-white text-xl font-bold hover:bg-emerald-700 active:scale-95 transition"
                             @click="sounds.playClick(); nextQuestion()"
-                            x-math="q.idx < activeModule().quest.length - 1 ? 'Next question' : 'See my score'"></button>
+                            x-math="q.idx < q.set.length - 1 ? 'Next question' : 'See my score'"></button>
                   </div>
                 </div>
               </template>
 
               <!-- Results screen -->
-              <template x-if="q.finished">
+              <template x-if="q.started && q.finished">
                 <div class="space-y-4">
                   <div class="rounded-2xl p-5 text-center border-2" :class="q.pct >= 70 ? 'bg-emerald-50 border-emerald-500' : 'bg-amber-50 border-amber-500'">
-                    <p class="text-lg font-bold text-slate-700">Your score</p>
+                    <p class="text-lg font-bold text-slate-700" x-math="q.mode === 'test' ? 'Your test score' : 'Your practice score'"></p>
                     <p class="text-6xl font-bold" :class="q.pct >= 70 ? 'text-emerald-700' : 'text-amber-700'" x-math="q.pct + '%'"></p>
-                    <p class="mt-2 text-xl font-bold" x-math="q.pct >= 70 ? 'Mastery reached! This quest is marked complete.' : 'So close. Score 70 percent or more to complete this quest.'"></p>
-                    <p class="mt-1 text-lg text-slate-700" x-math="'Your best so far: ' + (progress[currentModule].best === null ? 'none yet' : progress[currentModule].best + '%')"></p>
+                    <p class="mt-2 text-xl font-bold" x-math="q.pct >= 70 ? (q.mode === 'test' ? 'You passed the test!' : 'Mastery reached! Practice is marked complete.') : 'So close. Score 70 percent or more to pass. Try again with new numbers.'"></p>
+                    <p class="mt-1 text-lg text-slate-700" x-math="'Your best so far: ' + bestText()"></p>
                   </div>
 
                   <ul class="space-y-2">
-                    <template x-for="(item, i) in activeModule().quest" :key="i">
+                    <template x-for="(item, i) in q.set" :key="i">
                       <li class="rounded-xl border-2 border-slate-900/10 p-3 flex items-start gap-3">
                         <span class="mt-1 h-4 w-4 shrink-0 rounded-full" :class="dotClass(i)"></span>
                         <span class="text-lg">
                           <span class="font-bold" x-math="'Question ' + (i + 1) + ': '"></span>
                           <span x-math="resultLabel(i)"></span>
-                          <span class="block text-base text-slate-700" x-math="item.skill"></span>
+                          <span class="block text-base text-slate-700" x-math="item.prompt"></span>
+                          <span class="block text-base font-bold" x-show="q.results[i] && q.results[i].points === 0" x-math="'Answer: ' + item.solution.answer"></span>
                         </span>
                       </li>
                     </template>
                   </ul>
 
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <button type="button" class="min-h-[56px] rounded-xl border-2 border-indigo-700 bg-white text-indigo-800 text-xl font-bold hover:bg-indigo-50 active:scale-95 transition" @click="sounds.playClick(); retryQuest()">Try the quest again</button>
-                    <button type="button" x-show="currentModule < modules.length" class="min-h-[56px] rounded-xl bg-indigo-700 text-white text-xl font-bold hover:bg-indigo-800 active:scale-95 transition" @click="sounds.playClick(); selectModule(currentModule + 1)">Go to the next module</button>
+                    <button type="button" x-show="q.mode === 'practice'" class="min-h-[56px] rounded-xl border-2 border-emerald-600 bg-emerald-50 text-emerald-900 text-xl font-bold active:scale-95 transition" @click="sounds.playClick(); setTab('test')">Take the module test</button>
+                    <button type="button" class="min-h-[56px] rounded-xl border-2 border-indigo-700 bg-white text-indigo-800 text-xl font-bold hover:bg-indigo-50 active:scale-95 transition" @click="sounds.playClick(); retryQuest()" x-math="q.mode === 'test' ? 'Redo the test with new questions' : 'Practice again with new questions'"></button>
+                    <button type="button" x-show="currentModule < modules.length && q.mode === 'practice'" class="min-h-[56px] rounded-xl bg-indigo-700 text-white text-xl font-bold hover:bg-indigo-800 active:scale-95 transition" @click="sounds.playClick(); selectModule(currentModule + 1)">Go to the next module</button>
                   </div>
                 </div>
               </template>
@@ -1023,7 +1370,9 @@
     <!-- Lock status strip -->
     <div class="mb-2 rounded-xl px-3 py-2 text-lg font-bold flex items-center gap-2"
          :class="calcLocked() ? 'bg-red-100 text-red-900' : 'bg-emerald-100 text-emerald-900'" role="status">
-      <span x-math="calcLocked() ? 'Engine Locked. Use Mental Math!' : 'Engine unlocked. Go ahead!'"></span>
+      <span class="flex-1" x-math="calcLocked() ? 'Engine Locked. Use Mental Math!' : 'Engine unlocked. Go ahead!'"></span>
+      <button type="button" class="min-h-[48px] shrink-0 rounded-xl border-2 border-slate-900/30 bg-white px-3 text-base font-bold text-slate-900 active:scale-95 transition"
+              x-show="calcLocked() || calcUnlock" @click="sounds.playClick(); toggleCalcUnlock()" x-math="calcUnlock ? 'Lock it' : 'Unlock'"></button>
     </div>
 
     <!-- BASIC MODE -->
@@ -1121,7 +1470,16 @@
 
   <script src="js/engine.js"></script>
   <script src="js/content.js"></script>
+  <script src="js/bankcore.js"></script>
   <script src="js/lessons.js"></script>
+  <script src="js/m1.js"></script>
+  <script src="js/m2.js"></script>
+  <script src="js/m3.js"></script>
+  <script src="js/m4.js"></script>
+  <script src="js/m5.js"></script>
+  <script src="js/m6.js"></script>
+  <script src="js/m7.js"></script>
+  <script src="js/m8.js"></script>
   <script>
     function app() {
       /* Audio state lives in closure variables, not in Alpine data.
@@ -1234,7 +1592,8 @@
         tabs: [
           { id: 'big', label: 'Learn', short: 'Learn' },
           { id: 'sim', label: 'Explore', short: 'Explore' },
-          { id: 'quest', label: 'Practice', short: 'Practice' }
+          { id: 'quest', label: 'Practice', short: 'Practice' },
+          { id: 'test', label: 'Test', short: 'Test' }
         ],
         lockMessage: 'Locked! Use Mental Math!',
 
@@ -1244,6 +1603,11 @@
         pos: null,
         speechOk: !!(window.MathEngine && window.MathEngine.speech.supported),
         lesson: { sceneIdx: 0, i: 0, playing: false, voice: true, slow: false, wordIdx: -1 },
+        teachL: { sceneIdx: 0, i: 0, playing: false, voice: true, slow: false, wordIdx: -1 },
+        calcUnlock: false,
+        exTool: 'part',
+        placeText: '4589201',
+        placeRoundTo: '100000',
         storyOpen: false,
         readOn: false,
         read: { paused: false, slow: false, status: '' },
@@ -1254,9 +1618,9 @@
         progress: {},
         calc: { mode: 'basic', entry: '', prev: null, op: null, fresh: false, flash: false, timer: null },
         fr: { an: '', ad: '', bn: '', bd: '', op: '+', focus: 'an', result: null, error: '' },
-        q: { module: 1, idx: 0, input: '', input2: '', pick: null, status: 'ask', tries: 0, points: 0, results: [], finished: false, trap: '', msg: '', pct: 0 },
+        q: { module: 1, mode: 'practice', set: [], started: true, teach: false, idx: 0, input: '', input2: '', pick: null, status: 'ask', tries: 0, points: 0, results: [], finished: false, trap: '', msg: '', pct: 0 },
 
-        sim: { a: 12, b: 8, den: 8, num: 3, ua: 3, ub: 2, mult: 2, l: 4, w: 3, h: 2 },
+        sim: { a: 12, b: 8, den: 8, num: 3, ua: 3, ub: 2, mult: 2, l: 4, w: 3, h: 2, tot: 24, grp: 4, per: 3, pct: 25, price: 40, ang: 65 },
 
         basicKeys: [
           { k: 'C', label: 'C', aria: 'Clear', cls: 'bg-red-100 text-red-900' },
@@ -1297,6 +1661,7 @@
               }
             }
             if (localStorage.getItem('bcsm5.sound') === 'off') { this.soundOn = false; this.sounds.setEnabled(false); }
+            if (localStorage.getItem('bcsm5.calcUnlock') === 'on') this.calcUnlock = true;
             const last = parseInt(localStorage.getItem('bcsm5.module'), 10);
             if (last >= 1 && last <= this.modules.length) this.currentModule = last;
             const pos = JSON.parse(localStorage.getItem('bcsm5.pos') || 'null');
@@ -1315,7 +1680,7 @@
         },
         blankProgress() {
           const p = {};
-          for (const m of this.modules) p[m.id] = { big: false, sim: false, quest: false, best: null };
+          for (const m of this.modules) p[m.id] = { big: false, sim: false, quest: false, best: null, test: false, testBest: null };
           return p;
         },
         save() {
@@ -1339,19 +1704,24 @@
           this.resetCalc();
           this.q = this.freshQuest();
           this.resetSim();
+          this.exTool = this.exTools()[0].id;
+          this.placeText = '4589201'; this.placeRoundTo = '100000';
           try { localStorage.setItem('bcsm5.module', String(id)); } catch (e) { /* ignore */ }
           this.savePos();
           if (!noPush) { try { history.pushState({ view: 'module', m: id, tab: this.tab }, ''); } catch (e) { /* ignore */ } }
           window.scrollTo({ top: 0, behavior: 'smooth' });
           this.announce();
-          this.rereadSoon('#module-banner, #panel-' + this.tab);
+          this.rereadSoon('#module-banner, #panel-' + (this.tab === 'test' ? 'quest' : this.tab));
         },
         setTab(id) {
-          if (id !== 'big') this.stopLesson();
+          this.stopLesson();
+          this.teachReset();
           this.tab = id;
+          if (id === 'test' && this.q.mode !== 'test') this.q = this.freshQuest('test');
+          if (id === 'quest' && this.q.mode !== 'practice') this.q = this.freshQuest('practice');
           this.savePos();
           this.announce();
-          this.rereadSoon('#panel-' + id);
+          this.rereadSoon('#panel-' + (id === 'test' ? 'quest' : id));
         },
         goHome(noPush) {
           this.stopLesson();
@@ -1404,10 +1774,18 @@
         /* =====================================================
            ANIMATED LESSON PLAYER
            ===================================================== */
-        scenes() { return (window.MATH_LESSONS && window.MATH_LESSONS[this.currentModule]) || []; },
-        scene() { return this.scenes()[this.lesson.sceneIdx] || { title: '', steps: [] }; },
+        L() { return this.tab === 'quest' ? this.teachL : this.lesson; },
+        vocab() { return (window.MATH_VOCAB && window.MATH_VOCAB[this.currentModule]) || []; },
+        scenes() {
+          if (this.tab === 'quest') {
+            const qu = this.currentQ();
+            return qu && qu.teach && qu.teach.steps.length ? [{ title: 'Teach me', steps: qu.teach.steps }] : [];
+          }
+          return (window.MATH_LESSONS && window.MATH_LESSONS[this.currentModule]) || [];
+        },
+        scene() { return this.scenes()[this.L().sceneIdx] || { title: '', steps: [] }; },
         steps() { return this.scene().steps; },
-        step() { return this.steps()[this.lesson.i] || { kind: 'expr', tokens: [], cap: '' }; },
+        step() { return this.steps()[this.L().i] || { kind: 'expr', tokens: [], cap: '' }; },
         capWords() { return String(this.step().cap || '').split(/\s+/).filter(Boolean); },
         barsMax() {
           const rows = this.step().rows || [];
@@ -1424,17 +1802,17 @@
           return cls;
         },
         clearLessonTimer() { if (lessonTimer) { clearTimeout(lessonTimer); lessonTimer = null; } },
-        lessonReset() { this.lesson.sceneIdx = 0; this.lesson.i = 0; this.lesson.wordIdx = -1; this.lesson.playing = false; },
+        lessonReset() { const L = this.lesson; L.sceneIdx = 0; L.i = 0; L.wordIdx = -1; L.playing = false; this.teachReset(); },
+        teachReset() { const T = this.teachL; T.sceneIdx = 0; T.i = 0; T.wordIdx = -1; T.playing = false; if (this.q) this.q.teach = false; },
         stopLesson() {
-          const L = this.lesson;
-          const was = L.playing || L.wordIdx >= 0;
+          const was = this.lesson.playing || this.lesson.wordIdx >= 0 || this.teachL.playing || this.teachL.wordIdx >= 0;
           this.clearLessonTimer();
-          L.playing = false;
-          L.wordIdx = -1;
+          this.lesson.playing = false; this.lesson.wordIdx = -1;
+          this.teachL.playing = false; this.teachL.wordIdx = -1;
           if (was) window.MathEngine.speech.cancel();
         },
         runStep(chain) {
-          const L = this.lesson;
+          const L = this.L();
           this.clearLessonTimer();
           L.wordIdx = -1;
           this.clearReadHighlight();
@@ -1467,7 +1845,7 @@
           }
         },
         lessonToggle() {
-          const L = this.lesson;
+          const L = this.L();
           if (L.playing) { this.stopLesson(); return; }
           this.read.paused = false;
           if (L.i >= this.steps().length - 1) L.i = 0;
@@ -1475,18 +1853,24 @@
           this.runStep(true);
         },
         lessonGo(d) {
-          const L = this.lesson;
+          const L = this.L();
           const n = this.steps().length;
           L.i = Math.max(0, Math.min(n - 1, L.i + d));
           this.runStep(L.playing);
         },
         lessonScene(idx) {
           this.stopLesson();
-          this.lesson.sceneIdx = idx;
-          this.lesson.i = 0;
+          const L = this.L();
+          L.sceneIdx = idx;
+          L.i = 0;
+        },
+        lessonNext(d) {
+          const n = this.scenes().length;
+          this.lessonScene(Math.max(0, Math.min(n - 1, this.lesson.sceneIdx + d)));
+          this.$nextTick(() => { const el = document.getElementById('lesson-player'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
         },
         lessonVoiceToggle() {
-          const L = this.lesson;
+          const L = this.L();
           L.voice = !L.voice;
           if (!L.voice) {
             window.MathEngine.speech.cancel();
@@ -1494,6 +1878,94 @@
             if (L.playing) this.runStep(true);
           }
         },
+        toggleTeach() {
+          if (this.q.teach) { this.stopLesson(); this.q.teach = false; return; }
+          this.stopLesson();
+          this.teachReset();
+          this.q.teach = true;
+          this.$nextTick(() => {
+            const el = document.getElementById('teach-player');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            this.lessonToggle();
+          });
+        },
+
+        /* =====================================================
+           EXPLORE TOOLS
+           ===================================================== */
+        exTools() {
+          const T = { part: 'Bar model', places: 'Place value chart', divshare: 'Sharing machine', fraction: 'Fraction bar', fracamt: 'Fraction of an amount', eqfrac: 'Equal fractions', ratio: 'Ratio blocks', percent: 'Percent helper', angles: 'Angle maker', volume: 'Box builder' };
+          const M = { 1: ['places', 'part'], 2: ['divshare', 'part'], 3: ['fracamt', 'eqfrac', 'fraction'], 4: ['places', 'fraction'], 5: ['ratio'], 6: ['percent', 'fraction'], 7: ['angles'], 8: ['volume'] };
+          return (M[this.currentModule] || ['part']).map(id => ({ id: id, title: T[id] }));
+        },
+        setExTool(id) { this.exTool = id; if (id === 'fracamt' || id === 'eqfrac') this.resetSim(); },
+        placeClean() {
+          let t = String(this.placeText).replace(/[^0-9.]/g, '');
+          const p = t.indexOf('.');
+          if (p >= 0) t = t.slice(0, p + 1) + t.slice(p + 1).replace(/\./g, '').slice(0, 3);
+          this.placeText = t.slice(0, 13);
+        },
+        placeParts() {
+          const t = String(this.placeText || '');
+          const bits = t.split('.');
+          let whole = (bits[0] || '').replace(/^0+(?=\d)/, '');
+          if (whole === '') whole = '0';
+          return { whole: whole.slice(-9), frac: (bits[1] || '').slice(0, 3), hasDot: t.indexOf('.') >= 0 };
+        },
+        placeCols() {
+          const names = ['Ones', 'Tens', 'Hundreds', 'Thousands', 'Ten thousands', 'Hundred thousands', 'Millions', 'Ten millions', 'Hundred millions'];
+          const p = this.placeParts();
+          const cols = [];
+          for (let i = 0; i < p.whole.length; i++) cols.push({ name: names[p.whole.length - 1 - i], d: p.whole[i], dot: false });
+          if (p.frac.length) {
+            cols.push({ name: '', d: '.', dot: true });
+            const dn = ['Tenths', 'Hundredths', 'Thousandths'];
+            for (let j = 0; j < p.frac.length; j++) cols.push({ name: dn[j], d: p.frac[j], dot: false });
+          }
+          return cols;
+        },
+        placeValues() {
+          const p = this.placeParts();
+          const out = [];
+          const names = ['ones', 'tens', 'hundreds', 'thousands', 'ten thousands', 'hundred thousands', 'millions', 'ten millions', 'hundred millions'];
+          for (let i = 0; i < p.whole.length; i++) {
+            const d = parseInt(p.whole[i], 10);
+            if (d === 0) continue;
+            const zeros = p.whole.length - 1 - i;
+            out.push('The ' + d + ' is in the ' + names[zeros] + ' place. It is worth ' + (d * Math.pow(10, zeros)).toLocaleString('en-CA') + '.');
+          }
+          const fn = ['tenths', 'hundredths', 'thousandths'], fv = ['0.1', '0.01', '0.001'];
+          for (let j = 0; j < p.frac.length; j++) {
+            const d = parseInt(p.frac[j], 10);
+            if (d === 0) continue;
+            out.push('The ' + d + ' is in the ' + fn[j] + ' place. It is worth ' + d + ' × ' + fv[j] + '.');
+          }
+          return out.slice(0, 12);
+        },
+        placeRoundOptions() {
+          const opts = [{ v: '0.01', n: 'hundredth' }, { v: '0.1', n: 'tenth' }, { v: '1', n: 'one' }, { v: '10', n: 'ten' }, { v: '100', n: 'hundred' }, { v: '1000', n: 'thousand' }, { v: '10000', n: 'ten thousand' }, { v: '100000', n: 'hundred thousand' }, { v: '1000000', n: 'million' }];
+          const len = this.placeParts().whole.length;
+          return opts.filter(o => { const p = Number(o.v); return p < 1 || p < Math.pow(10, len); });
+        },
+        placeRoundText() {
+          const raw = this.placeParts();
+          const value = Number(raw.whole + (raw.frac ? '.' + raw.frac : ''));
+          const rp = Number(this.placeRoundTo);
+          const opt = this.placeRoundOptions().find(o => o.v === this.placeRoundTo);
+          if (!opt || !isFinite(value)) return 'Pick a place to round to.';
+          const scaled = Number((value / rp).toFixed(6));
+          const look = Math.floor(Number((value / (rp / 10)).toFixed(6))) % 10;
+          let r = Math.round(scaled) * rp;
+          const dec = rp < 1 ? String(this.placeRoundTo).split('.')[1].length : 0;
+          r = Number(r.toFixed(dec));
+          const shown = r.toLocaleString('en-CA', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+          return 'Look at the digit to the right. It is ' + look + ', which is ' + (look >= 5 ? '5 or more, so round up. ' : 'less than 5, so keep it the same. ') + 'It rounds to ' + shown + '.';
+        },
+        pctAmount() { return String(Number((this.sim.price * this.sim.pct / 100).toFixed(2))); },
+        pctLeft() { return String(Number((this.sim.price - this.sim.price * this.sim.pct / 100).toFixed(2))); },
+        angPt(r) { const a = this.sim.ang * Math.PI / 180; return { x: +(120 + r * Math.cos(a)).toFixed(1), y: +(110 - r * Math.sin(a)).toFixed(1) }; },
+        labelPt(deg) { const a = deg * Math.PI / 180; return { x: +(120 + 66 * Math.cos(a)).toFixed(1), y: +(110 - 66 * Math.sin(a) + 5).toFixed(1) }; },
+        angName(a) { return a < 90 ? 'Acute' : (a === 90 ? 'Right angle' : (a < 180 ? 'Obtuse' : 'Straight')); },
 
         /* =====================================================
            READ ALOUD (reads what is on the screen)
@@ -1627,16 +2099,29 @@
         /* =====================================================
            MASTERY QUEST ENGINE
            ===================================================== */
-        freshQuest() {
-          return { module: this.currentModule, idx: 0, input: '', input2: '', pick: null, status: 'ask', tries: 0, points: 0, results: [], finished: false, trap: '', msg: '', pct: 0 };
+        freshQuest(mode) {
+          mode = mode || (this.tab === 'test' ? 'test' : 'practice');
+          const B = window.Bank;
+          const set = B && B.has(this.currentModule) ? (mode === 'test' ? B.testSet(this.currentModule, 25) : B.practiceSet(this.currentModule, 10)) : [];
+          return { module: this.currentModule, mode: mode, set: set, started: mode === 'practice', teach: false, idx: 0, input: '', input2: '', pick: null, status: 'ask', tries: 0, points: 0, results: [], finished: false, trap: '', msg: '', pct: 0 };
+        },
+        startTest() { this.q.started = true; this.rereadSoon('#panel-quest'); },
+        recordTest(id, percent) {
+          const p = this.progress[id];
+          const val = Math.max(0, Math.min(100, Math.round(percent)));
+          if (p.testBest === null || p.testBest === undefined || val > p.testBest) p.testBest = val;
+          p.test = p.testBest >= 70;
+        },
+        bestText() {
+          const p = this.progress[this.currentModule];
+          const b = this.q.mode === 'test' ? p.testBest : p.best;
+          return b === null || b === undefined ? 'none yet' : b + '%';
         },
         hasQuest(id) {
-          const m = this.modules[id - 1];
-          return !!(m && m.quest && m.quest.length > 0);
+          return !!(window.Bank && window.Bank.has(id));
         },
         currentQ() {
-          const m = this.activeModule();
-          return (m && m.quest && m.quest[this.q.idx]) || null;
+          return (this.q.set && this.q.set[this.q.idx]) || null;
         },
         canCheck() {
           const qu = this.currentQ();
@@ -1745,6 +2230,13 @@
             this.readFeedback();
             return;
           }
+          if (q.mode === 'test') {
+            q.results[q.idx] = { points: 0, tries: 1, revealed: true };
+            q.status = 'revealed';
+            this.sounds.playFailure();
+            this.readFeedback();
+            return;
+          }
           q.tries += 1;
           q.status = 'wrong';
           q.trap = r.trap || '';
@@ -1765,11 +2257,12 @@
         },
         nextQuestion() {
           const q = this.q;
-          const total = this.activeModule().quest.length;
+          const total = this.q.set.length;
           if (q.idx < total - 1) {
             q.idx += 1;
             q.input = ''; q.input2 = ''; q.pick = null;
             q.status = 'ask'; q.tries = 0; q.trap = ''; q.msg = '';
+            this.stopLesson(); this.teachReset();
             this.$nextTick(() => {
               const el = document.getElementById('quest-input');
               if (el) el.focus({ preventScroll: true });
@@ -1780,7 +2273,7 @@
           } else {
             q.pct = Math.round(q.points / total * 100);
             q.finished = true;
-            this.recordScore(this.currentModule, q.pct);
+            if (q.mode === 'test') this.recordTest(this.currentModule, q.pct); else this.recordScore(this.currentModule, q.pct);
             this.$nextTick(() => {
               const panel = document.getElementById('panel-quest');
               if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1788,11 +2281,11 @@
             this.rereadSoon('#panel-quest');
           }
         },
-        retryQuest() { this.q = this.freshQuest(); this.rereadSoon('#panel-quest'); },
+        retryQuest() { const mode = this.q.mode; this.stopLesson(); this.q = this.freshQuest(mode); this.q.started = true; this.rereadSoon('#panel-quest'); },
         resultLabel(i) {
           const r = this.q.results[i];
           if (!r) return 'Not answered';
-          if (r.revealed) return 'Answer shown';
+          if (r.revealed) return this.q.mode === 'test' ? 'Not correct' : 'Answer shown';
           if (r.tries === 0) return 'Correct on the first try';
           return 'Correct after ' + r.tries + (r.tries === 1 ? ' miss' : ' misses');
         },
@@ -1800,15 +2293,9 @@
         /* =====================================================
            BAR MODEL SIMULATOR ENGINE
            ===================================================== */
-        simDefaults() { return { a: 12, b: 8, den: 8, num: 3, ua: 3, ub: 2, mult: 2, l: 4, w: 3, h: 2 }; },
+        simDefaults() { return { a: 12, b: 8, den: 8, num: 3, ua: 3, ub: 2, mult: 2, l: 4, w: 3, h: 2, tot: 24, grp: 4, per: 3, pct: 25, price: 40, ang: 65 }; },
         resetSim() { Object.assign(this.sim, this.simDefaults()); },
-        simGroup() {
-          const m = this.currentModule;
-          if (m <= 2) return 'part';
-          if (m <= 4) return 'fraction';
-          if (m <= 6) return 'ratio';
-          return 'volume';
-        },
+        simGroup() { return this.exTool; },
         simControls() {
           const g = this.simGroup();
           if (g === 'part') return [
@@ -1818,6 +2305,28 @@
           if (g === 'fraction') return [
             { key: 'den', label: 'Total Slices (Denominator)', min: 2, max: 20, type: 'select' },
             { key: 'num', label: 'Colored Slices (Numerator)', min: 0, max: this.sim.den }
+          ];
+          if (g === 'places') return [];
+          if (g === 'divshare') return [
+            { key: 'tot', label: 'How many to share', min: 2, max: 60 },
+            { key: 'grp', label: 'How many groups', min: 2, max: 10 }
+          ];
+          if (g === 'fracamt') return [
+            { key: 'den', label: 'Bottom number (equal groups)', min: 2, max: 10 },
+            { key: 'num', label: 'Top number (groups to take)', min: 1, max: this.sim.den },
+            { key: 'per', label: 'How many in each group', min: 1, max: 10 }
+          ];
+          if (g === 'eqfrac') return [
+            { key: 'den', label: 'Bottom number', min: 2, max: 8 },
+            { key: 'num', label: 'Top number', min: 1, max: this.sim.den },
+            { key: 'mult', label: 'Multiply top and bottom by', min: 1, max: 6 }
+          ];
+          if (g === 'percent') return [
+            { key: 'pct', label: 'Percent', min: 0, max: 100 },
+            { key: 'price', label: 'Price in dollars', min: 5, max: 200 }
+          ];
+          if (g === 'angles') return [
+            { key: 'ang', label: 'Size of the green angle', min: 0, max: 180 }
           ];
           if (g === 'ratio') return [
             { key: 'ua', label: 'Ratio Blocks for Unit A', min: 1, max: 8 },
@@ -1869,6 +2378,12 @@
         },
         simIntro() {
           const g = this.simGroup();
+          if (g === 'places') return 'Type any number and see where every digit lives. Then try rounding it.';
+          if (g === 'divshare') return 'Pick how many things to share and how many groups. Watch the sharing happen.';
+          if (g === 'fracamt') return 'Split an amount into equal groups, then take some of the groups.';
+          if (g === 'eqfrac') return 'Multiply the top and the bottom by the same number and watch the amount stay the same.';
+          if (g === 'percent') return 'Slide the percent and the price to see how much you save.';
+          if (g === 'angles') return 'Slide the ray. The two angles on a straight line always make 180 degrees.';
           if (g === 'part') return 'Move the sliders and watch two boxes share one long bar. The total is worked out for you.';
           if (g === 'fraction') return 'Choose how many equal slices the bar has, then color some of them to build a fraction.';
           if (g === 'ratio') return 'Build two rows of blocks, then scale up and watch both rows grow together.';
@@ -1876,6 +2391,12 @@
         },
         simPlain() {
           const s = this.sim, g = this.simGroup();
+          if (g === 'places') return 'Each digit has a home. The home decides what the digit is worth. Moving a digit one home to the left makes it worth ten times more.';
+          if (g === 'divshare') return 'Sharing ' + s.tot + ' things into ' + s.grp + ' equal groups gives ' + Math.floor(s.tot / s.grp) + ' in each group.' + (s.tot % s.grp ? ' There are ' + (s.tot % s.grp) + ' left over. That leftover is called the remainder. It is always smaller than the number of groups.' : ' Nothing is left over.');
+          if (g === 'fracamt') return 'The bottom number, ' + s.den + ', cuts ' + (s.den * s.per) + ' into ' + s.den + ' equal groups of ' + s.per + '. The top number, ' + s.num + ', says take ' + s.num + ' of the groups. That is ' + (s.num * s.per) + '.';
+          if (g === 'eqfrac') return 'Both bars show the same amount. The bottom bar has more pieces, but each piece is smaller. Multiplying the top and the bottom by the same number never changes the amount.';
+          if (g === 'percent') return 'Percent means out of 100. ' + s.pct + '% means ' + s.pct + ' out of every 100. On a price of $' + s.price + ', that takes off $' + this.pctAmount() + '.';
+          if (g === 'angles') return 'A straight line is a half turn, which is 180 degrees. When a ray splits the line, the two angles share the 180. If one is ' + s.ang + ', the other is 180 take away ' + s.ang + ', which is ' + (180 - s.ang) + '.';
           if (g === 'part') return 'Part A is ' + s.a + ' and Part B is ' + s.b + '. Put them side by side and you get one long bar worth ' + (s.a + s.b) + '. The longer box is the bigger part. If you know the whole and one part, take the part away to find the other one.';
           if (g === 'fraction') return 'The bar is cut into ' + s.den + ' equal pieces. You colored ' + s.num + ' of them, so the fraction is ' + s.num + ' out of ' + s.den + '. More colored pieces means a bigger fraction. When you cut into more pieces, each piece gets smaller.';
           if (g === 'ratio') return 'For every ' + (s.ua * s.mult) + ' blocks in row A there are ' + (s.ub * s.mult) + ' blocks in row B. Each small group is one batch of the recipe. Making more batches is like making a bigger potion. Both rows grow together, so the ratio stays the same.';
@@ -1883,6 +2404,12 @@
         },
         simTry() {
           const g = this.simGroup();
+          if (g === 'places') return 'Type 4589201 and round to the nearest hundred thousand. Then type 3.482 and round to the nearest tenth.';
+          if (g === 'divshare') return 'Share 25 into 4 groups. What is left over? Now try 24 into 4. What changes?';
+          if (g === 'fracamt') return 'Set the bottom to 4, the top to 3 and each group to 6. Now change the top to 2. What happens to the answer?';
+          if (g === 'eqfrac') return 'Set the bottom to 2, the top to 1, then multiply by 2, 3 and 4. Does the shaded amount change?';
+          if (g === 'percent') return 'Set the price to 40 and try 10%, 25% and 50%. Which is easiest to find in your head?';
+          if (g === 'angles') return 'Make the green angle exactly 90. What do you notice about the purple angle? Now try 30.';
           if (g === 'part') return 'Make Part A and Part B the same size. What do you notice about the two boxes? Now make Part A much bigger than Part B.';
           if (g === 'fraction') return 'Slide Colored Slices all the way up to the total. What fraction is that? Then try setting it to 4 of 8 and 2 of 4. Do they look the same?';
           if (g === 'ratio') return 'Set the multiplier to 4. Does the ratio look different, or is it just more batches of the same recipe? Now change Unit A and see how the rows lose their match.';
@@ -1890,7 +2417,11 @@
         },
 
         /* ---------- Calculator gate ---------- */
-        calcLocked() { return !this.activeModule().calc; },
+        calcLocked() { return !this.calcUnlock && !this.activeModule().calc; },
+        toggleCalcUnlock() {
+          this.calcUnlock = !this.calcUnlock;
+          try { localStorage.setItem('bcsm5.calcUnlock', this.calcUnlock ? 'on' : 'off'); } catch (e) { /* ignore */ }
+        },
         triggerLock() {
           this.sounds.playLockAlert();
           this.calc.flash = true;

@@ -5,7 +5,7 @@
   var E = window.MathEngine;
   function tok(t, hi, tag) { return { t: t, hi: !!hi, tag: tag || '' }; }
 
-  window.MATH_LESSONS = {
+  var BASE = {
     1: [
       { title: 'Round 4,589,201', steps: [
         { kind: 'expr', tokens: [tok('4,589,201')], cap: 'Here is a big number. Let us round it to the nearest hundred thousand.' },
@@ -87,4 +87,6 @@
       ] }
     ]
   };
+  window.MATH_LESSONS = window.MATH_LESSONS || {};
+  Object.keys(BASE).forEach(function (k) { if (!window.MATH_LESSONS[k]) window.MATH_LESSONS[k] = BASE[k]; });
 })();
