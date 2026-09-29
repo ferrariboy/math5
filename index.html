@@ -1,0 +1,2949 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>BC Singapore Math 5 Mastery Explorer</title>
+  <meta name="description" content="Grade 5 math practice that connects the British Columbia curriculum with Singapore Math 5A and 5B.">
+  <meta name="theme-color" content="#fffbeb">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"Atkinson Hyperlegible"', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'] }
+        }
+      }
+    };
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+    html { font-size: 18px; }
+    body { font-size: 1.125rem; line-height: 1.7; }
+    .safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+    @keyframes flashWarn {
+      0%, 100% { background-color: #b91c1c; }
+      50% { background-color: #f59e0b; color: #0f172a; }
+    }
+    .flash-warn { animation: flashWarn 0.7s ease-in-out infinite; }
+    @keyframes softPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.45); }
+      50% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+    }
+    .soft-pulse { animation: softPulse 2.4s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce) {
+      .flash-warn { animation: none; background-color: #b91c1c; }
+      .soft-pulse { animation: none; }
+      * { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+    }
+    button:focus-visible, a:focus-visible, input:focus-visible, [role="tab"]:focus-visible {
+      outline: 4px solid #4f46e5;
+      outline-offset: 2px;
+    }
+    .sim-range { -webkit-appearance: none; appearance: none; height: 48px; background: transparent; width: 100%; cursor: pointer; }
+    .sim-range::-webkit-slider-runnable-track { height: 14px; border-radius: 9999px; background: #cbd5e1; }
+    .sim-range::-webkit-slider-thumb { -webkit-appearance: none; height: 44px; width: 44px; margin-top: -15px; border-radius: 9999px; background: #4338ca; border: 4px solid #fff; box-shadow: 0 1px 5px rgba(15,23,42,0.5); }
+    .sim-range::-moz-range-track { height: 14px; border-radius: 9999px; background: #cbd5e1; }
+    .sim-range::-moz-range-thumb { height: 36px; width: 36px; border-radius: 9999px; background: #4338ca; border: 4px solid #fff; box-shadow: 0 1px 5px rgba(15,23,42,0.5); }
+    pre.drawing { white-space: pre; tab-size: 4; }
+  </style>
+</head>
+
+<body class="bg-amber-50 text-slate-900 font-sans antialiased" x-data="app()" x-init="init()" x-cloak @keydown.escape.window="drawerOpen = false; calcOpen = false">
+
+  <!-- Skip link -->
+  <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-indigo-700 focus:text-white focus:px-4 focus:py-3 focus:rounded-lg">Skip to main content</a>
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-30 bg-amber-50/95 backdrop-blur border-b-2 border-slate-900/10">
+    <div class="mx-auto max-w-7xl flex items-center gap-3 px-3 sm:px-6 py-2">
+      <button type="button"
+              class="lg:hidden min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 active:scale-95 transition"
+              @click="sounds.playClick(); drawerOpen = !drawerOpen"
+              :aria-expanded="drawerOpen.toString()"
+              aria-controls="module-drawer"
+              aria-label="Open or close the module menu">
+        <svg x-show="!drawerOpen" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <svg x-show="drawerOpen" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+
+      <div class="flex-1 min-w-0">
+        <h1 class="text-xl sm:text-2xl font-bold leading-tight truncate">Math 5 Mastery Explorer</h1>
+        <p class="text-base text-slate-700 leading-tight truncate hidden sm:block">British Columbia Grade 5 with Singapore Math 5A and 5B</p>
+      </div>
+
+      <div class="hidden sm:flex items-center gap-2 rounded-xl bg-white px-3 py-2 border-2 border-slate-900/10" aria-label="Overall progress">
+        <span class="text-lg font-bold text-emerald-700" x-text="overallPercent() + '%'"></span>
+        <span class="text-base text-slate-700">done</span>
+      </div>
+
+      <button type="button"
+              class="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl border-2 border-slate-900/20 bg-white text-slate-900 hover:bg-amber-100 active:scale-95 transition"
+              @click="toggleSound()"
+              :aria-pressed="soundOn.toString()"
+              :aria-label="soundOn ? 'Sound is on. Tap to mute' : 'Sound is off. Tap to turn on'">
+        <svg x-show="soundOn" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H3v6h3l5 4V5zM15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13"/></svg>
+        <svg x-show="!soundOn" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H3v6h3l5 4V5zM16 9l5 6M21 9l-5 6"/></svg>
+      </button>
+
+      <button type="button"
+              class="min-h-[48px] min-w-[48px] px-4 flex items-center justify-center gap-2 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 active:scale-95 transition"
+              @click="sounds.playClick(); calcOpen = !calcOpen"
+              :aria-expanded="calcOpen.toString()"
+              aria-controls="calculator-panel">
+        <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path stroke-linecap="round" d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></svg>
+        <span class="hidden sm:inline">Calculator</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-7xl lg:flex lg:gap-6 lg:px-6">
+
+    <!-- DRAWER OVERLAY -->
+    <div x-show="drawerOpen" x-transition.opacity class="fixed inset-0 z-40 bg-slate-900/60 lg:hidden" @click="sounds.playClick(); drawerOpen = false" aria-hidden="true"></div>
+
+    <!-- SIDEBAR / DRAWER -->
+    <aside id="module-drawer"
+           class="fixed inset-y-0 left-0 z-50 w-[88%] max-w-sm overflow-y-auto bg-amber-50 border-r-2 border-slate-900/10 p-4 transform transition-transform duration-300 ease-out lg:static lg:z-auto lg:w-80 lg:max-w-none lg:shrink-0 lg:translate-x-0 lg:border-r-0 lg:px-0 lg:py-6 lg:self-start lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)]"
+           :class="drawerOpen ? 'translate-x-0' : '-translate-x-full'"
+           aria-label="Module navigation">
+
+      <div class="flex items-center justify-between lg:hidden mb-3">
+        <h2 class="text-2xl font-bold">Your Modules</h2>
+        <button type="button" class="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-slate-900 text-white active:scale-95" @click="sounds.playClick(); drawerOpen = false" aria-label="Close the module menu">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+
+      <!-- PROGRESS CARD -->
+      <section class="rounded-2xl bg-white border-2 border-slate-900/10 p-4 mb-4 shadow-sm" aria-labelledby="progress-title">
+        <h2 id="progress-title" class="text-xl font-bold mb-2">Your Progress</h2>
+        <div class="flex items-baseline justify-between">
+          <span class="text-lg text-slate-700">Overall completion</span>
+          <span class="text-2xl font-bold text-emerald-700" x-text="overallPercent() + '%'"></span>
+        </div>
+        <div class="mt-2 h-4 w-full rounded-full bg-slate-200 overflow-hidden" role="progressbar" :aria-valuenow="overallPercent()" aria-valuemin="0" aria-valuemax="100" aria-label="Overall completion">
+          <div class="h-full rounded-full bg-emerald-500 transition-all duration-500" :style="'width:' + overallPercent() + '%'"></div>
+        </div>
+        <dl class="mt-4 grid grid-cols-2 gap-3">
+          <div class="rounded-xl bg-indigo-50 p-3">
+            <dt class="text-base text-slate-700">Modules done</dt>
+            <dd class="text-2xl font-bold text-indigo-700" x-text="modulesDone() + ' of 8'"></dd>
+          </div>
+          <div class="rounded-xl bg-emerald-50 p-3">
+            <dt class="text-base text-slate-700">Average score</dt>
+            <dd class="text-2xl font-bold text-emerald-700" x-text="averageScore()"></dd>
+          </div>
+        </dl>
+        <button type="button" class="mt-4 w-full min-h-[48px] rounded-xl border-2 border-slate-900/20 bg-white text-lg font-bold text-slate-800 hover:bg-amber-100 active:scale-95 transition" @click="sounds.playClick(); resetProgress()">
+          Reset my progress
+        </button>
+      </section>
+
+      <!-- MODULE LIST -->
+      <nav aria-label="Modules">
+        <h2 class="sr-only">All 8 modules</h2>
+        <ul class="space-y-2">
+          <template x-for="m in modules" :key="m.id">
+            <li>
+              <button type="button"
+                      class="w-full min-h-[64px] text-left rounded-2xl border-2 p-3 flex items-center gap-3 transition active:scale-[0.98]"
+                      :class="currentModule === m.id ? 'bg-indigo-700 border-indigo-700 text-white shadow-md' : 'bg-white border-slate-900/10 hover:border-indigo-400'"
+                      :aria-current="currentModule === m.id ? 'page' : 'false'"
+                      @click="sounds.playClick(); selectModule(m.id)">
+                <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xl font-bold"
+                      :class="currentModule === m.id ? 'bg-white text-indigo-700' : (modulePercent(m.id) === 100 ? 'bg-emerald-500 text-white' : 'bg-amber-200 text-slate-900')"
+                      x-text="modulePercent(m.id) === 100 ? '\u2713' : m.id"></span>
+                <span class="flex-1 min-w-0">
+                  <span class="block text-lg font-bold leading-snug" x-text="m.title"></span>
+                  <span class="block text-base leading-snug" :class="currentModule === m.id ? 'text-indigo-100' : 'text-slate-700'" x-text="m.book"></span>
+                </span>
+                <span class="shrink-0 text-base font-bold rounded-lg px-2 py-1"
+                      :class="m.id <= 4 ? (currentModule === m.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700') : (currentModule === m.id ? 'bg-emerald-300 text-slate-900' : 'bg-emerald-100 text-emerald-800')"
+                      x-text="m.id <= 4 ? 'Mental' : 'Calc'"></span>
+              </button>
+            </li>
+          </template>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <main id="main" class="flex-1 min-w-0 px-3 sm:px-6 lg:px-0 py-4 lg:py-6 pb-32">
+
+      <!-- Module banner -->
+      <section class="rounded-3xl bg-white border-2 border-slate-900/10 p-5 sm:p-7 shadow-sm" aria-labelledby="module-title">
+        <p class="text-lg font-bold text-indigo-700" x-text="'Module ' + activeModule().id + ' of 8'"></p>
+        <h2 id="module-title" class="mt-1 text-3xl font-bold leading-tight" x-text="activeModule().title"></h2>
+        <p class="mt-2 text-lg text-slate-800" x-text="activeModule().kidSummary"></p>
+        <div class="mt-4 grid gap-3 sm:grid-cols-2">
+          <div class="rounded-xl bg-amber-100 p-3">
+            <p class="text-base font-bold text-slate-700">British Columbia link</p>
+            <p class="text-lg" x-text="activeModule().bc"></p>
+          </div>
+          <div class="rounded-xl bg-indigo-50 p-3">
+            <p class="text-base font-bold text-slate-700">Singapore Math link</p>
+            <p class="text-lg" x-text="activeModule().book"></p>
+          </div>
+        </div>
+        <div class="mt-4 rounded-xl p-3 text-lg font-bold flex items-center gap-2"
+             :class="calcLocked() ? 'bg-slate-100 text-slate-800' : 'bg-emerald-100 text-emerald-900'">
+          <svg x-show="calcLocked()" class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 118 0v3"/></svg>
+          <svg x-show="!calcLocked()" class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 017.5-2"/></svg>
+          <span x-text="calcLocked() ? 'Calculator locked in this module. Use your brain!' : 'Calculator unlocked for this module.'"></span>
+        </div>
+      </section>
+
+      <!-- SUB TABS -->
+      <div class="mt-5 grid grid-cols-3 gap-2 rounded-2xl bg-white border-2 border-slate-900/10 p-2" role="tablist" aria-label="Module sections">
+        <template x-for="t in tabs" :key="t.id">
+          <button type="button" role="tab"
+                  :id="'tab-' + t.id"
+                  class="min-h-[56px] rounded-xl px-2 py-2 text-lg font-bold leading-tight transition active:scale-95 flex flex-col items-center justify-center gap-0.5"
+                  :class="tab === t.id ? 'bg-indigo-700 text-white shadow' : 'bg-transparent text-slate-800 hover:bg-amber-100'"
+                  :aria-selected="(tab === t.id).toString()"
+                  :aria-controls="'panel-' + t.id"
+                  @click="sounds.playClick(); setTab(t.id)">
+            <span class="sm:hidden" x-text="t.short"></span>
+            <span class="hidden sm:inline" x-text="t.label"></span>
+            <span class="text-sm font-normal" x-show="isDone(currentModule, t.id)" :class="tab === t.id ? 'text-emerald-200' : 'text-emerald-700'">Complete</span>
+          </button>
+        </template>
+      </div>
+
+      <!-- TAB PANELS -->
+      <div class="mt-5">
+
+        <!-- ============ THE BIG IDEA ============ -->
+        <section id="panel-big" role="tabpanel" aria-labelledby="tab-big" x-show="tab === 'big'" class="rounded-3xl bg-white border-2 border-slate-900/10 p-5 sm:p-7 shadow-sm">
+          <h3 class="text-2xl font-bold">The Big Idea</h3>
+          <p class="mt-1 text-lg text-slate-700">A short story, a picture, and then the math, in plain words.</p>
+
+          <!-- Story renderer -->
+          <template x-if="activeModule().bigIdea">
+            <div class="mt-4 space-y-5">
+
+              <div class="rounded-2xl bg-indigo-700 text-white p-5">
+                <p class="text-lg font-bold text-indigo-200">Today's story</p>
+                <h4 class="text-3xl font-bold leading-tight" x-text="activeModule().bigIdea.title"></h4>
+                <p class="mt-2 text-lg" x-text="activeModule().bigIdea.hook"></p>
+              </div>
+
+              <template x-for="(s, i) in activeModule().bigIdea.steps" :key="s.stage">
+                <article class="rounded-2xl border-2 p-4 sm:p-5" :class="stageStyle(s.stage).card">
+                  <div class="flex items-center gap-3">
+                    <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xl font-bold" :class="stageStyle(s.stage).badge" x-text="i + 1"></span>
+                    <div class="min-w-0">
+                      <p class="text-base font-bold text-slate-700" x-text="stageStyle(s.stage).label"></p>
+                      <h4 class="text-2xl font-bold leading-snug" x-text="s.heading"></h4>
+                    </div>
+                  </div>
+                  <p class="mt-3 text-lg" x-text="s.story"></p>
+
+                  <template x-if="s.visual && s.visual.type === 'pre'">
+                    <pre class="drawing mt-3 overflow-x-auto rounded-xl bg-slate-900 text-emerald-100 p-4 text-base leading-relaxed font-mono" x-text="s.visual.text" tabindex="0"></pre>
+                  </template>
+
+                  <template x-if="s.visual && s.visual.type === 'table'">
+                    <div class="mt-3">
+                      <p class="text-lg font-bold mb-1" x-show="s.visual.caption" x-text="s.visual.caption"></p>
+                      <div class="overflow-x-auto rounded-xl border-2 border-slate-900/20 bg-white" tabindex="0">
+                        <table class="w-full text-center">
+                          <thead>
+                            <tr class="bg-indigo-100 text-base">
+                              <th class="px-2 py-2"></th>
+                              <template x-for="(h, hi) in s.visual.headers" :key="hi">
+                                <th class="px-2 py-2 whitespace-nowrap font-bold" x-text="h"></th>
+                              </template>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <template x-for="(row, ri) in s.visual.rows" :key="ri">
+                              <tr class="border-t-2 border-slate-900/10">
+                                <td class="px-2 py-2 text-base font-bold text-left bg-amber-100 whitespace-nowrap" x-text="row.label"></td>
+                                <template x-for="(c, ci) in row.cells" :key="ci">
+                                  <td class="px-2 py-2 text-xl font-bold whitespace-nowrap" :class="cellClass(c)" x-text="c"></td>
+                                </template>
+                              </tr>
+                            </template>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </template>
+
+                  <div class="mt-3 rounded-xl bg-white border-l-8 border-emerald-500 p-3">
+                    <p class="text-base font-bold text-emerald-800">In plain words</p>
+                    <p class="text-lg" x-text="s.plain"></p>
+                  </div>
+                </article>
+              </template>
+
+              <!-- Cultural connection (only if the module has one) -->
+              <template x-if="activeModule().bigIdea.culture">
+                <article class="rounded-2xl border-2 border-emerald-600 bg-emerald-50 p-4 sm:p-5">
+                  <p class="text-base font-bold text-emerald-800">Learning from the land and its people</p>
+                  <h4 class="text-2xl font-bold leading-snug" x-text="activeModule().bigIdea.culture.title"></h4>
+                  <p class="mt-3 text-lg" x-text="activeModule().bigIdea.culture.text"></p>
+                  <div class="mt-3 rounded-xl bg-white border-l-8 border-emerald-500 p-3">
+                    <p class="text-base font-bold text-emerald-800">In plain words</p>
+                    <p class="text-lg" x-text="activeModule().bigIdea.culture.plain"></p>
+                  </div>
+                  <div class="mt-3 rounded-xl bg-white border-l-8 border-indigo-500 p-3">
+                    <p class="text-base font-bold text-indigo-800">Try it</p>
+                    <p class="text-lg" x-text="activeModule().bigIdea.culture.activity"></p>
+                  </div>
+                  <p class="mt-3 text-lg text-slate-800" x-text="activeModule().bigIdea.culture.respect"></p>
+                </article>
+              </template>
+
+              <div class="rounded-2xl bg-amber-100 border-2 border-amber-400 p-4">
+                <p class="text-base font-bold text-slate-700">Remember this</p>
+                <p class="text-xl font-bold" x-text="activeModule().bigIdea.recap"></p>
+              </div>
+            </div>
+          </template>
+
+          <!-- Empty state for modules without content yet -->
+          <div id="engine-big"
+               x-show="!activeModule().bigIdea"
+               class="mt-4 min-h-[260px] rounded-2xl border-2 border-dashed border-indigo-300 bg-indigo-50/50 p-5 flex flex-col items-center justify-center text-center"
+               data-engine="big" :data-module="currentModule">
+            <div class="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 mb-3">
+              <svg class="h-9 w-9" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3a6 6 0 00-3.6 10.8c.6.5 1 1.2 1 2V17h5.2v-1.2c0-.8.4-1.5 1-2A6 6 0 0012 3zM10 21h4"/></svg>
+            </div>
+            <p class="text-xl font-bold" x-text="'Lesson story for Module ' + currentModule + ' is on its way'"></p>
+            <p class="mt-1 text-lg text-slate-700 max-w-md">This story arrives in a later phase. Check back soon.</p>
+          </div>
+
+          <button type="button" class="mt-5 min-h-[48px] w-full sm:w-auto px-6 rounded-xl text-lg font-bold transition active:scale-95"
+                  :class="isDone(currentModule, 'big') ? 'bg-emerald-100 text-emerald-900 border-2 border-emerald-500' : 'bg-emerald-600 text-white hover:bg-emerald-700'"
+                  @click="sounds.playClick(); toggleDone(currentModule, 'big')"
+                  x-text="isDone(currentModule, 'big') ? 'Marked complete. Tap to undo' : 'I understand this idea'"></button>
+        </section>
+
+        <!-- ============ VISUAL BAR MODEL SIMULATOR ============ -->
+        <section id="panel-sim" role="tabpanel" aria-labelledby="tab-sim" x-show="tab === 'sim'" class="rounded-3xl bg-white border-2 border-slate-900/10 p-5 sm:p-7 shadow-sm">
+          <h3 class="text-2xl font-bold">Visual Bar Model Simulator</h3>
+                    <p class="mt-1 text-lg text-slate-700" x-text="simIntro()"></p>
+
+          <div id="engine-sim" class="mt-4 space-y-5" data-engine="sim" :data-module="currentModule">
+
+            <!-- CONTROLS -->
+            <div class="rounded-2xl bg-slate-50 border-2 border-slate-900/10 p-4 space-y-5" role="group" aria-label="Simulator controls">
+              <template x-for="c in simControls()" :key="simGroup() + c.key">
+                <div>
+                  <div class="flex items-center justify-between gap-3">
+                    <label :for="'sim-' + c.key" class="text-lg font-bold leading-snug" x-text="c.label"></label>
+                    <output :for="'sim-' + c.key" class="min-w-[4rem] rounded-xl bg-indigo-700 px-3 py-1 text-center text-3xl font-bold text-white" x-text="sim[c.key]"></output>
+                  </div>
+
+                  <template x-if="c.type === 'select'">
+                    <select :id="'sim-' + c.key"
+                            class="mt-2 w-full min-h-[56px] rounded-xl border-2 border-slate-900/30 bg-white px-3 text-2xl font-bold focus:border-indigo-600"
+                            @change="setSim(c.key, $event.target.value)">
+                      <template x-for="n in (c.max - c.min + 1)" :key="n">
+                        <option :value="c.min + n - 1" :selected="(c.min + n - 1) === sim[c.key]" x-text="(c.min + n - 1) + ' slices'"></option>
+                      </template>
+                    </select>
+                  </template>
+
+                  <template x-if="c.type !== 'select'">
+                    <div class="mt-1 flex items-center gap-2">
+                      <button type="button" class="min-h-[48px] min-w-[48px] rounded-xl bg-slate-900 text-3xl font-bold text-white active:scale-95 transition"
+                              @click="sounds.playClick(); stepSim(c.key, -1)" :aria-label="'Decrease ' + c.label">&minus;</button>
+                      <input :id="'sim-' + c.key" type="range" class="sim-range flex-1" step="1"
+                             :min="c.min" :max="c.max" :value="sim[c.key]"
+                             @input="setSim(c.key, $event.target.value)">
+                      <button type="button" class="min-h-[48px] min-w-[48px] rounded-xl bg-slate-900 text-3xl font-bold text-white active:scale-95 transition"
+                              @click="sounds.playClick(); stepSim(c.key, 1)" :aria-label="'Increase ' + c.label">+</button>
+                    </div>
+                  </template>
+                </div>
+              </template>
+
+              <button type="button" class="w-full min-h-[48px] rounded-xl border-2 border-slate-900/30 bg-white text-lg font-bold hover:bg-amber-100 active:scale-95 transition" @click="sounds.playClick(); resetSim()">Reset the bars</button>
+            </div>
+
+            <!-- STAGE -->
+            <div class="rounded-2xl bg-white border-2 border-slate-900/20 p-4 sm:p-5" aria-live="polite">
+
+              <!-- MODULES 1 AND 2: part and whole -->
+              <template x-if="simGroup() === 'part'">
+                <div>
+                  <p class="text-center text-2xl font-bold">Total Whole = <span class="text-indigo-700" x-text="sim.a + sim.b"></span></p>
+                  <div class="mx-1 mt-1 h-5 rounded-t-xl border-4 border-b-0 border-slate-900" aria-hidden="true"></div>
+                  <div class="flex h-24 w-full overflow-hidden rounded-xl border-4 border-slate-900" role="img"
+                       :aria-label="'Part A ' + sim.a + ' and Part B ' + sim.b + ' make a total of ' + (sim.a + sim.b)">
+                    <div class="flex items-center justify-center bg-emerald-400 text-3xl font-bold text-slate-900 transition-all duration-300" :style="'width:' + simPct('a') + '%'">
+                      <span x-show="simPct('a') > 9" x-text="sim.a"></span>
+                    </div>
+                    <div class="flex items-center justify-center border-l-4 border-slate-900 bg-indigo-600 text-3xl font-bold text-white transition-all duration-300" :style="'width:' + simPct('b') + '%'">
+                      <span x-show="simPct('b') > 9" x-text="sim.b"></span>
+                    </div>
+                  </div>
+                  <div class="mt-3 grid grid-cols-2 gap-3 text-xl font-bold">
+                    <div class="rounded-xl bg-emerald-100 p-3">Part A = <span x-text="sim.a"></span></div>
+                    <div class="rounded-xl bg-indigo-100 p-3">Part B = <span x-text="sim.b"></span></div>
+                  </div>
+                  <div class="mt-3 rounded-xl bg-amber-100 p-3 text-xl font-bold leading-relaxed">
+                    <p x-text="sim.a + ' + ' + sim.b + ' = ' + (sim.a + sim.b)"></p>
+                    <p x-text="(sim.a + sim.b) + ' − ' + sim.a + ' = ' + sim.b"></p>
+                    <p x-text="(sim.a + sim.b) + ' − ' + sim.b + ' = ' + sim.a"></p>
+                  </div>
+                </div>
+              </template>
+
+              <!-- MODULES 3 AND 4: fraction slicing -->
+              <template x-if="simGroup() === 'fraction'">
+                <div>
+                  <div class="grid w-full overflow-hidden rounded-xl border-4 border-slate-900" role="img"
+                       :aria-label="sim.num + ' out of ' + sim.den + ' slices colored'"
+                       :style="'grid-template-columns: repeat(' + sim.den + ', minmax(0, 1fr))'">
+                    <template x-for="i in sim.den" :key="i">
+                      <div class="flex h-24 items-center justify-center border-r-2 border-white text-xl font-bold transition-colors duration-200 last:border-r-0"
+                           :class="i <= sim.num ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600'"
+                           x-text="sim.den <= 12 ? i : ''"></div>
+                    </template>
+                  </div>
+                  <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+                    <div class="rounded-xl bg-indigo-100 px-1 py-3">
+                      <p class="text-base font-bold text-slate-700">Fraction</p>
+                      <p class="text-2xl font-bold text-indigo-800" x-text="sim.num + '/' + sim.den"></p>
+                    </div>
+                    <div class="rounded-xl bg-emerald-100 px-1 py-3">
+                      <p class="text-base font-bold text-slate-700">Decimal</p>
+                      <p class="text-2xl font-bold text-emerald-800" x-text="simDecimal()"></p>
+                    </div>
+                    <div class="rounded-xl bg-amber-100 px-1 py-3">
+                      <p class="text-base font-bold text-slate-700">Percent</p>
+                      <p class="text-2xl font-bold text-amber-800" x-text="simPercent() + '%'"></p>
+                    </div>
+                  </div>
+                  <p class="mt-3 rounded-xl bg-slate-100 p-3 text-xl font-bold" x-text="simSimplestText()"></p>
+                </div>
+              </template>
+
+              <!-- MODULES 5 AND 6: ratio scaling -->
+              <template x-if="simGroup() === 'ratio'">
+                <div class="space-y-4">
+                  <template x-for="v in simRatioViews()" :key="v.label">
+                    <div class="space-y-3 rounded-xl border-2 border-slate-900/10 bg-slate-50 p-3">
+                      <p class="text-xl font-bold" x-text="v.label"></p>
+                      <div>
+                        <p class="text-lg font-bold text-emerald-800" x-text="'Row A: ' + (sim.ua * v.m) + ' blocks'"></p>
+                        <div class="mt-1 flex flex-wrap gap-2">
+                          <template x-for="bt in v.m" :key="bt">
+                            <div class="flex gap-1 rounded-lg border-2 border-emerald-600 bg-emerald-50 p-1">
+                              <template x-for="k in sim.ua" :key="k">
+                                <span class="h-8 w-8 rounded bg-emerald-500" aria-hidden="true"></span>
+                              </template>
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+                      <div>
+                        <p class="text-lg font-bold text-indigo-800" x-text="'Row B: ' + (sim.ub * v.m) + ' blocks'"></p>
+                        <div class="mt-1 flex flex-wrap gap-2">
+                          <template x-for="bt in v.m" :key="bt">
+                            <div class="flex gap-1 rounded-lg border-2 border-indigo-600 bg-indigo-50 p-1">
+                              <template x-for="k in sim.ub" :key="k">
+                                <span class="h-8 w-8 rounded bg-indigo-600" aria-hidden="true"></span>
+                              </template>
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                  <div class="grid grid-cols-2 gap-3 text-center">
+                    <div class="rounded-xl bg-amber-100 p-3">
+                      <p class="text-base font-bold text-slate-700">Ratio A to B</p>
+                      <p class="text-3xl font-bold" x-text="sim.ua + ' : ' + sim.ub"></p>
+                    </div>
+                    <div class="rounded-xl bg-emerald-100 p-3">
+                      <p class="text-base font-bold text-slate-700">After scaling</p>
+                      <p class="text-3xl font-bold text-emerald-800" x-text="(sim.ua * sim.mult) + ' : ' + (sim.ub * sim.mult)"></p>
+                    </div>
+                  </div>
+                  <p class="rounded-xl bg-slate-100 p-3 text-xl font-bold" x-text="simRatioSimplest()"></p>
+                </div>
+              </template>
+
+              <!-- MODULES 7 AND 8: box stacking -->
+              <template x-if="simGroup() === 'volume'">
+                <div>
+                  <p class="text-lg font-bold mb-2">Flat layers stack up from the floor. The top layer is the newest.</p>
+                  <div class="space-y-2">
+                    <template x-for="n in simLayerNums()" :key="n">
+                      <div class="rounded-xl border-2 p-2 transition-colors" :class="n === sim.h ? 'border-indigo-600 bg-indigo-50' : 'border-slate-300 bg-white'">
+                        <div class="mb-1 flex items-center justify-between gap-2 text-lg font-bold">
+                          <span x-text="'Layer ' + n + (n === 1 ? ' (floor)' : '')"></span>
+                          <span class="text-indigo-800" x-text="'Cubes so far: ' + (sim.l * sim.w * n)"></span>
+                        </div>
+                        <div class="mx-auto grid gap-1" :style="'grid-template-columns: repeat(' + sim.l + ', minmax(0, 1fr)); width: min(100%, ' + (sim.l * 2.6) + 'rem)'">
+                          <template x-for="cell in (sim.l * sim.w)" :key="cell">
+                            <span class="aspect-square rounded border-2 border-white" :class="layerColor(n)" aria-hidden="true"></span>
+                          </template>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                  <div class="mt-4 grid grid-cols-3 gap-3 text-center">
+                    <div class="rounded-xl bg-emerald-100 p-3">
+                      <p class="text-base font-bold text-slate-700">Floor area</p>
+                      <p class="text-3xl font-bold text-emerald-800" x-text="sim.l * sim.w"></p>
+                    </div>
+                    <div class="rounded-xl bg-amber-100 p-3">
+                      <p class="text-base font-bold text-slate-700">Layers</p>
+                      <p class="text-3xl font-bold text-amber-800" x-text="sim.h"></p>
+                    </div>
+                    <div class="rounded-xl bg-indigo-100 p-3">
+                      <p class="text-base font-bold text-slate-700">Volume</p>
+                      <p class="text-3xl font-bold text-indigo-800" x-text="sim.l * sim.w * sim.h"></p>
+                    </div>
+                  </div>
+                  <div class="mt-3 rounded-xl bg-slate-100 p-3 text-xl font-bold leading-relaxed">
+                    <p x-text="'Floor area = ' + sim.l + ' × ' + sim.w + ' = ' + (sim.l * sim.w)"></p>
+                    <p x-text="'Volume = ' + (sim.l * sim.w) + ' × ' + sim.h + ' = ' + (sim.l * sim.w * sim.h) + ' cubes'"></p>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <!-- PLAIN WORDS AND CHALLENGE -->
+            <div class="rounded-xl border-l-8 border-emerald-500 bg-emerald-50 p-4">
+              <p class="text-base font-bold text-emerald-800">In plain words</p>
+              <p class="text-lg" x-text="simPlain()"></p>
+            </div>
+            <div class="rounded-xl border-l-8 border-indigo-500 bg-indigo-50 p-4">
+              <p class="text-base font-bold text-indigo-800">Try it</p>
+              <p class="text-lg" x-text="simTry()"></p>
+            </div>
+          </div>
+          <button type="button" class="mt-4 min-h-[48px] w-full sm:w-auto px-6 rounded-xl text-lg font-bold transition active:scale-95"
+                  :class="isDone(currentModule, 'sim') ? 'bg-emerald-100 text-emerald-900 border-2 border-emerald-500' : 'bg-emerald-600 text-white hover:bg-emerald-700'"
+                  @click="sounds.playClick(); toggleDone(currentModule, 'sim')"
+                  x-text="isDone(currentModule, 'sim') ? 'Marked complete. Tap to undo' : 'I explored the bars'"></button>
+        </section>
+
+        <!-- ============ MASTERY QUEST ============ -->
+        <section id="panel-quest" role="tabpanel" aria-labelledby="tab-quest" x-show="tab === 'quest'" class="rounded-3xl bg-white border-2 border-slate-900/10 p-5 sm:p-7 shadow-sm">
+          <h3 class="text-2xl font-bold">Mastery Quest</h3>
+          <p class="mt-1 text-lg text-slate-700">Questions that start easy and grow into challenge problems. Score 70 percent or more to complete a quest.</p>
+
+          <!-- Quest engine -->
+          <template x-if="hasQuest(currentModule)">
+            <div class="mt-4">
+
+              <!-- Progress row -->
+              <div class="flex items-center justify-between gap-3 mb-3">
+                <p class="text-lg font-bold" x-text="q.finished ? 'Quest finished' : 'Question ' + (q.idx + 1) + ' of ' + activeModule().quest.length"></p>
+                <div class="flex gap-2" aria-hidden="true">
+                  <template x-for="(item, i) in activeModule().quest" :key="i">
+                    <span class="h-4 w-4 rounded-full" :class="dotClass(i)"></span>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Active question -->
+              <template x-if="!q.finished && currentQ()">
+                <div class="space-y-4">
+
+                  <div class="rounded-2xl bg-indigo-50 border-2 border-indigo-200 p-4">
+                    <p class="text-base font-bold text-indigo-800" x-text="currentQ().skill"></p>
+                    <p class="mt-1 text-2xl font-bold leading-snug" x-text="currentQ().prompt"></p>
+                  </div>
+
+                  <!-- Multiple choice -->
+                  <template x-if="currentQ().type === 'choice'">
+                    <div class="space-y-2" role="radiogroup" aria-label="Answer choices">
+                      <template x-for="(o, i) in currentQ().options" :key="i">
+                        <button type="button" role="radio"
+                                class="w-full min-h-[56px] text-left rounded-xl border-2 p-3 text-lg font-bold transition active:scale-[0.98]"
+                                :class="optionClass(i)"
+                                :aria-checked="(q.pick === i).toString()"
+                                :disabled="isDone()"
+                                @click="sounds.playClick(); pickOption(i)"
+                                x-text="String.fromCharCode(65 + i) + '. ' + o.text"></button>
+                      </template>
+                    </div>
+                  </template>
+
+                  <!-- Single number or fraction -->
+                  <template x-if="currentQ().type === 'number'">
+                    <div>
+                      <label for="quest-input" class="block text-lg font-bold mb-1">Your answer</label>
+                      <input id="quest-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+                             class="w-full min-h-[56px] rounded-xl border-2 border-slate-900/30 bg-white px-4 text-2xl font-bold focus:border-indigo-600 disabled:bg-slate-100"
+                             :inputmode="currentQ().keyboard || 'decimal'"
+                             :placeholder="currentQ().placeholder"
+                             x-model="q.input"
+                             :disabled="isDone()"
+                             @keydown.enter.prevent="checkAnswer()">
+                    </div>
+                  </template>
+
+                  <!-- Quotient and remainder -->
+                  <template x-if="currentQ().type === 'divrem'">
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <label for="quest-input" class="block text-lg font-bold mb-1">Quotient</label>
+                        <input id="quest-input" type="text" inputmode="numeric" autocomplete="off"
+                               class="w-full min-h-[56px] rounded-xl border-2 border-slate-900/30 bg-white px-4 text-2xl font-bold focus:border-indigo-600 disabled:bg-slate-100"
+                               placeholder="Full groups"
+                               x-model="q.input" :disabled="isDone()" @keydown.enter.prevent="checkAnswer()">
+                      </div>
+                      <div>
+                        <label for="quest-input2" class="block text-lg font-bold mb-1">Remainder</label>
+                        <input id="quest-input2" type="text" inputmode="numeric" autocomplete="off"
+                               class="w-full min-h-[56px] rounded-xl border-2 border-slate-900/30 bg-white px-4 text-2xl font-bold focus:border-indigo-600 disabled:bg-slate-100"
+                               placeholder="Left over"
+                               x-model="q.input2" :disabled="isDone()" @keydown.enter.prevent="checkAnswer()">
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Check button -->
+                  <button type="button" x-show="!isDone()"
+                          class="w-full min-h-[56px] rounded-xl bg-indigo-700 text-white text-xl font-bold hover:bg-indigo-800 active:scale-95 transition disabled:opacity-40 disabled:pointer-events-none"
+                          :disabled="!canCheck()" @click="checkAnswer()">Check my answer</button>
+
+                  <!-- Gentle message for invalid input or almost right -->
+                  <div x-show="q.msg" role="alert" class="rounded-xl bg-amber-100 border-2 border-amber-500 p-3 text-lg font-bold" x-text="q.msg"></div>
+
+                  <!-- Wrong answer coaching -->
+                  <div x-show="q.tries > 0 && !isDone()" class="rounded-2xl border-2 border-red-300 bg-red-50 p-4 space-y-3" aria-live="polite">
+                    <p class="text-xl font-bold text-red-900">Not quite yet. Let us look closer.</p>
+                    <p x-show="q.trap" class="text-lg" x-text="q.trap"></p>
+                    <p class="text-lg font-bold" x-text="currentQ().hint.nudge"></p>
+
+                    <ol class="list-decimal pl-6 space-y-2 text-lg">
+                      <template x-for="(st, i) in currentQ().hint.steps" :key="i">
+                        <li x-text="st"></li>
+                      </template>
+                    </ol>
+
+                    <template x-if="currentQ().hint.visual && currentQ().hint.visual.type === 'pre'">
+                      <pre class="drawing overflow-x-auto rounded-xl bg-slate-900 text-emerald-100 p-4 text-base leading-relaxed font-mono" x-text="currentQ().hint.visual.text" tabindex="0"></pre>
+                    </template>
+
+                    <template x-if="currentQ().hint.visual && currentQ().hint.visual.type === 'table'">
+                      <div>
+                        <p class="text-lg font-bold mb-1" x-show="currentQ().hint.visual.caption" x-text="currentQ().hint.visual.caption"></p>
+                        <div class="overflow-x-auto rounded-xl border-2 border-slate-900/20 bg-white" tabindex="0">
+                          <table class="w-full text-center">
+                            <thead>
+                              <tr class="bg-indigo-100 text-base">
+                                <th class="px-2 py-2"></th>
+                                <template x-for="(h, hi) in currentQ().hint.visual.headers" :key="hi">
+                                  <th class="px-2 py-2 whitespace-nowrap font-bold" x-text="h"></th>
+                                </template>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <template x-for="(row, ri) in currentQ().hint.visual.rows" :key="ri">
+                                <tr class="border-t-2 border-slate-900/10">
+                                  <td class="px-2 py-2 text-base font-bold text-left bg-amber-100 whitespace-nowrap" x-text="row.label"></td>
+                                  <template x-for="(c, ci) in row.cells" :key="ci">
+                                    <td class="px-2 py-2 text-xl font-bold whitespace-nowrap" :class="cellClass(c)" x-text="c"></td>
+                                  </template>
+                                </tr>
+                              </template>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </template>
+
+                    <button type="button" x-show="q.tries >= 2"
+                            class="w-full min-h-[48px] rounded-xl border-2 border-slate-900/30 bg-white text-lg font-bold hover:bg-amber-100 active:scale-95 transition"
+                            @click="sounds.playClick(); revealAnswer()">Show me the answer</button>
+                  </div>
+
+                  <!-- Solved or revealed -->
+                  <div x-show="isDone()" class="rounded-2xl border-2 p-4 space-y-3" :class="q.status === 'right' ? 'bg-emerald-50 border-emerald-500' : 'bg-amber-50 border-amber-500'" aria-live="polite">
+                    <p class="text-2xl font-bold" x-text="q.status === 'right' ? doneHeadline() : 'Here is the answer'"></p>
+                    <p class="text-xl font-bold" x-text="'Answer: ' + currentQ().solution.answer"></p>
+                    <p class="text-lg" x-text="currentQ().solution.work"></p>
+                    <div class="rounded-xl bg-white border-l-8 border-emerald-500 p-3">
+                      <p class="text-base font-bold text-emerald-800">In plain words</p>
+                      <p class="text-lg" x-text="currentQ().solution.plain"></p>
+                    </div>
+                    <button type="button"
+                            class="w-full min-h-[56px] rounded-xl bg-emerald-600 text-white text-xl font-bold hover:bg-emerald-700 active:scale-95 transition"
+                            @click="sounds.playClick(); nextQuestion()"
+                            x-text="q.idx < activeModule().quest.length - 1 ? 'Next question' : 'See my score'"></button>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Results screen -->
+              <template x-if="q.finished">
+                <div class="space-y-4">
+                  <div class="rounded-2xl p-5 text-center border-2" :class="q.pct >= 70 ? 'bg-emerald-50 border-emerald-500' : 'bg-amber-50 border-amber-500'">
+                    <p class="text-lg font-bold text-slate-700">Your score</p>
+                    <p class="text-6xl font-bold" :class="q.pct >= 70 ? 'text-emerald-700' : 'text-amber-700'" x-text="q.pct + '%'"></p>
+                    <p class="mt-2 text-xl font-bold" x-text="q.pct >= 70 ? 'Mastery reached! This quest is marked complete.' : 'So close. Score 70 percent or more to complete this quest.'"></p>
+                    <p class="mt-1 text-lg text-slate-700" x-text="'Your best so far: ' + (progress[currentModule].best === null ? 'none yet' : progress[currentModule].best + '%')"></p>
+                  </div>
+
+                  <ul class="space-y-2">
+                    <template x-for="(item, i) in activeModule().quest" :key="i">
+                      <li class="rounded-xl border-2 border-slate-900/10 p-3 flex items-start gap-3">
+                        <span class="mt-1 h-4 w-4 shrink-0 rounded-full" :class="dotClass(i)"></span>
+                        <span class="text-lg">
+                          <span class="font-bold" x-text="'Question ' + (i + 1) + ': '"></span>
+                          <span x-text="resultLabel(i)"></span>
+                          <span class="block text-base text-slate-700" x-text="item.skill"></span>
+                        </span>
+                      </li>
+                    </template>
+                  </ul>
+
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <button type="button" class="min-h-[56px] rounded-xl border-2 border-indigo-700 bg-white text-indigo-800 text-xl font-bold hover:bg-indigo-50 active:scale-95 transition" @click="sounds.playClick(); retryQuest()">Try the quest again</button>
+                    <button type="button" x-show="currentModule < 8" class="min-h-[56px] rounded-xl bg-indigo-700 text-white text-xl font-bold hover:bg-indigo-800 active:scale-95 transition" @click="sounds.playClick(); selectModule(currentModule + 1)">Go to the next module</button>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Empty state for modules without a quest yet -->
+          <div id="engine-quest"
+               x-show="!hasQuest(currentModule)"
+               class="mt-4 min-h-[260px] rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50 p-5 flex flex-col items-center justify-center text-center"
+               data-engine="quest" :data-module="currentModule">
+            <div class="flex h-16 w-16 items-center justify-center rounded-full bg-amber-200 text-slate-900 mb-3">
+              <svg class="h-9 w-9" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.3l6-.8L12 3z"/></svg>
+            </div>
+            <p class="text-xl font-bold" x-text="'Question bank for Module ' + currentModule + ' is on its way'"></p>
+            <p class="mt-1 text-lg text-slate-700 max-w-md">This quest arrives in a later phase. Check back soon.</p>
+          </div>
+
+          <div class="mt-4 flex flex-col sm:flex-row sm:items-center gap-3" x-show="!hasQuest(currentModule)">
+            <button type="button" class="min-h-[48px] w-full sm:w-auto px-6 rounded-xl text-lg font-bold transition active:scale-95"
+                    :class="isDone(currentModule, 'quest') ? 'bg-emerald-100 text-emerald-900 border-2 border-emerald-500' : 'bg-emerald-600 text-white hover:bg-emerald-700'"
+                    @click="sounds.playClick(); toggleDone(currentModule, 'quest')"
+                    x-text="isDone(currentModule, 'quest') ? 'Marked complete. Tap to undo' : 'I finished the quest'"></button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Prev / Next -->
+      <div class="mt-5 grid grid-cols-2 gap-3">
+        <button type="button" class="min-h-[56px] rounded-xl border-2 border-slate-900/20 bg-white text-lg font-bold hover:bg-amber-100 active:scale-95 transition disabled:opacity-40 disabled:pointer-events-none"
+                :disabled="currentModule === 1" @click="sounds.playClick(); selectModule(currentModule - 1)">Previous module</button>
+        <button type="button" class="min-h-[56px] rounded-xl bg-indigo-700 text-white text-lg font-bold hover:bg-indigo-800 active:scale-95 transition disabled:opacity-40 disabled:pointer-events-none"
+                :disabled="currentModule === 8" @click="sounds.playClick(); selectModule(currentModule + 1)">Next module</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- FLOATING CALCULATOR BUTTON -->
+  <button type="button"
+          x-show="!calcOpen"
+          class="fixed right-4 z-40 h-16 w-16 rounded-full bg-indigo-700 text-white shadow-xl flex items-center justify-center active:scale-95 transition soft-pulse"
+          style="bottom: max(1rem, env(safe-area-inset-bottom));"
+          @click="sounds.playClick(); calcOpen = true"
+          aria-label="Open the calculator">
+    <svg class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path stroke-linecap="round" d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></svg>
+    <span x-show="calcLocked()" class="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-red-700 text-white border-2 border-amber-50">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 118 0v3"/></svg>
+    </span>
+  </button>
+
+  <!-- CALCULATOR PANEL -->
+  <div id="calculator-panel"
+       x-show="calcOpen"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0 translate-y-6"
+       x-transition:enter-end="opacity-100 translate-y-0"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100 translate-y-0"
+       x-transition:leave-end="opacity-0 translate-y-6"
+       class="fixed z-50 inset-x-2 bottom-2 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-[24rem] max-h-[92vh] overflow-y-auto rounded-3xl bg-white border-4 border-slate-900 shadow-2xl p-3"
+       role="dialog" aria-label="Calculator">
+
+    <div class="flex items-center justify-between gap-2 mb-2">
+      <h2 class="text-xl font-bold pl-1">Calculator</h2>
+      <div class="flex gap-2">
+        <button type="button" class="min-h-[48px] min-w-[48px] px-3 rounded-xl text-lg font-bold transition active:scale-95"
+                :class="calc.mode === 'basic' ? 'bg-indigo-700 text-white' : 'bg-slate-100 text-slate-900'"
+                @click="sounds.playClick(); setCalcMode('basic')" :aria-pressed="(calc.mode === 'basic').toString()">Basic</button>
+        <button type="button" class="min-h-[48px] min-w-[48px] px-3 rounded-xl text-lg font-bold transition active:scale-95"
+                :class="calc.mode === 'fraction' ? 'bg-indigo-700 text-white' : 'bg-slate-100 text-slate-900'"
+                @click="sounds.playClick(); setCalcMode('fraction')" :aria-pressed="(calc.mode === 'fraction').toString()">Fractions</button>
+        <button type="button" class="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-slate-900 text-white active:scale-95" @click="sounds.playClick(); calcOpen = false" aria-label="Close the calculator">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Lock status strip -->
+    <div class="mb-2 rounded-xl px-3 py-2 text-lg font-bold flex items-center gap-2"
+         :class="calcLocked() ? 'bg-red-100 text-red-900' : 'bg-emerald-100 text-emerald-900'" role="status">
+      <span x-text="calcLocked() ? 'Engine Locked. Use Mental Math!' : 'Engine unlocked. Go ahead!'"></span>
+    </div>
+
+    <!-- BASIC MODE -->
+    <div x-show="calc.mode === 'basic'">
+      <div class="rounded-2xl bg-slate-900 text-white p-3 mb-2 min-h-[92px] flex flex-col justify-end text-right transition"
+           :class="calc.flash ? 'flash-warn' : ''" aria-live="polite">
+        <div class="text-lg text-slate-300 min-h-[1.75rem] truncate" x-text="calc.flash ? '' : basicExpression()"></div>
+        <div class="font-bold break-all leading-tight"
+             :class="calc.flash ? 'text-2xl text-center' : 'text-4xl'"
+             x-text="basicDisplay()"></div>
+      </div>
+      <div class="grid grid-cols-4 gap-2">
+        <template x-for="key in basicKeys" :key="key.k">
+          <button type="button"
+                  class="min-h-[56px] rounded-xl text-2xl font-bold transition active:scale-95 select-none"
+                  :class="[key.cls, key.wide ? 'col-span-2' : '']"
+                  @click="pressBasic(key.k)"
+                  :aria-label="key.aria" x-text="key.label"></button>
+        </template>
+      </div>
+    </div>
+
+    <!-- FRACTION MODE -->
+    <div x-show="calc.mode === 'fraction'">
+      <div class="rounded-2xl bg-slate-900 text-white p-3 mb-2 min-h-[92px] transition" :class="calc.flash ? 'flash-warn' : ''" aria-live="polite">
+        <div x-show="calc.flash" class="text-2xl font-bold text-center py-4" x-text="lockMessage"></div>
+        <div x-show="!calc.flash" class="flex items-center justify-center gap-3">
+          <!-- Fraction A -->
+          <div class="flex flex-col items-stretch w-20">
+            <button type="button" class="min-h-[48px] rounded-lg text-2xl font-bold border-2 transition"
+                    :class="fr.focus === 'an' ? 'border-emerald-400 bg-slate-700' : 'border-slate-600 bg-slate-800'"
+                    @click="fr.focus = 'an'" aria-label="First fraction top number" x-text="fr.an || '?'"></button>
+            <div class="h-1 my-1 rounded bg-white"></div>
+            <button type="button" class="min-h-[48px] rounded-lg text-2xl font-bold border-2 transition"
+                    :class="fr.focus === 'ad' ? 'border-emerald-400 bg-slate-700' : 'border-slate-600 bg-slate-800'"
+                    @click="fr.focus = 'ad'" aria-label="First fraction bottom number" x-text="fr.ad || '?'"></button>
+          </div>
+          <span class="text-3xl font-bold w-8 text-center" x-text="frOpLabel()"></span>
+          <!-- Fraction B -->
+          <div class="flex flex-col items-stretch w-20">
+            <button type="button" class="min-h-[48px] rounded-lg text-2xl font-bold border-2 transition"
+                    :class="fr.focus === 'bn' ? 'border-emerald-400 bg-slate-700' : 'border-slate-600 bg-slate-800'"
+                    @click="fr.focus = 'bn'" aria-label="Second fraction top number" x-text="fr.bn || '?'"></button>
+            <div class="h-1 my-1 rounded bg-white"></div>
+            <button type="button" class="min-h-[48px] rounded-lg text-2xl font-bold border-2 transition"
+                    :class="fr.focus === 'bd' ? 'border-emerald-400 bg-slate-700' : 'border-slate-600 bg-slate-800'"
+                    @click="fr.focus = 'bd'" aria-label="Second fraction bottom number" x-text="fr.bd || '?'"></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result -->
+      <div class="mb-2 rounded-2xl bg-emerald-50 border-2 border-emerald-300 p-3 min-h-[92px]" aria-live="polite">
+        <template x-if="fr.error">
+          <p class="text-lg font-bold text-red-800" x-text="fr.error"></p>
+        </template>
+        <template x-if="!fr.error && fr.result">
+          <div>
+            <p class="text-lg text-slate-700">Answer in simplest form</p>
+            <p class="text-3xl font-bold text-emerald-800" x-text="fr.result.text"></p>
+            <p class="text-lg text-slate-800" x-show="fr.result.mixed" x-text="'As a mixed number: ' + fr.result.mixed"></p>
+            <p class="text-lg text-slate-800" x-text="'As a decimal: ' + fr.result.decimal"></p>
+          </div>
+        </template>
+        <template x-if="!fr.error && !fr.result">
+          <p class="text-lg text-slate-700">Tap a box, type numbers, pick a sign, then press equals.</p>
+        </template>
+      </div>
+
+      <!-- Operator row -->
+      <div class="grid grid-cols-4 gap-2 mb-2" role="group" aria-label="Choose an operation">
+        <template x-for="o in frOps" :key="o.k">
+          <button type="button" class="min-h-[56px] rounded-xl text-2xl font-bold transition active:scale-95"
+                  :class="fr.op === o.k ? 'bg-indigo-700 text-white' : 'bg-indigo-100 text-indigo-900'"
+                  @click="pressFraction('op:' + o.k)" :aria-label="o.aria" :aria-pressed="(fr.op === o.k).toString()" x-text="o.label"></button>
+        </template>
+      </div>
+
+      <!-- Keypad -->
+      <div class="grid grid-cols-3 gap-2">
+        <template x-for="d in ['7','8','9','4','5','6','1','2','3']" :key="d">
+          <button type="button" class="min-h-[56px] rounded-xl bg-slate-100 text-slate-900 text-2xl font-bold hover:bg-slate-200 active:scale-95 transition" @click="pressFraction(d)" x-text="d"></button>
+        </template>
+        <button type="button" class="min-h-[56px] rounded-xl bg-red-100 text-red-900 text-2xl font-bold active:scale-95 transition" @click="pressFraction('C')" aria-label="Clear everything">C</button>
+        <button type="button" class="min-h-[56px] rounded-xl bg-slate-100 text-slate-900 text-2xl font-bold hover:bg-slate-200 active:scale-95 transition" @click="pressFraction('0')">0</button>
+        <button type="button" class="min-h-[56px] rounded-xl bg-slate-200 text-slate-900 text-2xl font-bold active:scale-95 transition" @click="pressFraction('back')" aria-label="Delete last digit">&#9003;</button>
+        <button type="button" class="col-span-3 min-h-[56px] rounded-xl bg-emerald-600 text-white text-2xl font-bold hover:bg-emerald-700 active:scale-95 transition" @click="pressFraction('=')" aria-label="Equals">=</button>
+      </div>
+    </div>
+
+    <p class="mt-3 px-1 text-base text-slate-700" x-show="!calcLocked()">Tip: work it out by hand first, then use this to check your answer.</p>
+  </div>
+
+  <!-- ALPINE APPLICATION -->
+  <script>
+    function app() {
+      /* Audio state lives in closure variables, not in Alpine data.
+         Alpine wraps data in Proxies, and a Proxy around a native AudioContext breaks it. */
+      let audioCtx = null;
+      let soundEnabled = true;
+
+      function getCtx() {
+        if (!soundEnabled) return null;
+        try {
+          if (!audioCtx) {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return null;
+            audioCtx = new AC();
+          }
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          return audioCtx;
+        } catch (e) { return null; }
+      }
+
+      /* One shaped note. The gain starts near zero, ramps up fast, then decays exponentially,
+         which removes the clicking sound that a hard start or stop would cause. */
+      function tone(ctx, freq, start, dur, type, peak, endFreq) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, start);
+        if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, start + dur);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(peak, start + Math.min(0.01, dur / 3));
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + dur + 0.02);
+      }
+
+      function haptic(pattern) {
+        try {
+          if (soundEnabled && navigator.vibrate) navigator.vibrate(pattern);
+        } catch (e) { /* vibration not supported */ }
+      }
+
+      return {
+        /* =====================================================
+           SOUND AND HAPTIC ENGINE
+           ===================================================== */
+        soundOn: true,
+        sounds: {
+          setEnabled(on) { soundEnabled = !!on; },
+
+          /* Cheerful upward arpeggio: C5, E5, G5, then a sparkling C6 */
+          playSuccess() {
+            haptic([40, 30, 40]);
+            const ctx = getCtx();
+            if (!ctx) return;
+            const t = ctx.currentTime;
+            tone(ctx, 523, t, 0.12, 'sine', 0.22);
+            tone(ctx, 659, t + 0.09, 0.12, 'sine', 0.22);
+            tone(ctx, 784, t + 0.18, 0.12, 'sine', 0.22);
+            tone(ctx, 1046, t + 0.27, 0.35, 'sine', 0.24);
+            tone(ctx, 2092, t + 0.27, 0.25, 'triangle', 0.05);
+          },
+
+          /* Friendly "uh oh" slide from 300Hz down to 180Hz over 0.3 seconds */
+          playFailure() {
+            haptic(150);
+            const ctx = getCtx();
+            if (!ctx) return;
+            tone(ctx, 300, ctx.currentTime, 0.3, 'triangle', 0.28, 180);
+          },
+
+          /* Tiny tactile click at 600Hz for 0.03 seconds */
+          playClick() {
+            haptic(15);
+            const ctx = getCtx();
+            if (!ctx) return;
+            tone(ctx, 600, ctx.currentTime, 0.03, 'sine', 0.16);
+          },
+
+          /* Low dual tone buzz that alternates between 150Hz and 120Hz */
+          playLockAlert() {
+            haptic([60, 40, 60]);
+            const ctx = getCtx();
+            if (!ctx) return;
+            const t = ctx.currentTime;
+            for (let i = 0; i < 4; i++) {
+              tone(ctx, i % 2 === 0 ? 150 : 120, t + i * 0.06, 0.06, 'square', 0.1);
+            }
+          }
+        },
+        toggleSound() {
+          this.soundOn = !this.soundOn;
+          this.sounds.setEnabled(this.soundOn);
+          try { localStorage.setItem('bcsm5.sound', this.soundOn ? 'on' : 'off'); } catch (e) { /* ignore */ }
+          if (this.soundOn) this.sounds.playClick();
+        },
+
+        /* =====================================================
+           MODULE DATA (Modules 1 to 4 complete, 5 to 8 pending)
+           ===================================================== */
+        modules: [
+
+          /* ---------------- MODULE 1 ---------------- */
+          {
+            id: 1,
+            title: `Mega Numbers and Numerical Spaces`,
+            book: `Singapore Math 5A, Whole Numbers`,
+            bc: `Read, write and compare whole numbers to millions. Use place value to round and to multiply by 10 and 100.`,
+            kidSummary: `Learn how huge numbers are built from garages that fit inside each other.`,
+            bigIdea: {
+              title: `The Nesting Garages`,
+              hook: `Big numbers feel scary until you see how they are built. Every big number is a set of garages that nest inside each other, like a set of stacking dolls.`,
+              steps: [
+                {
+                  stage: `Concrete`,
+                  heading: `Fill a garage, build a bigger one`,
+                  story: `Picture a tiny town where every toy car needs a parking spot. When ten toy cars are parked, the spots are full. So the town builds a Tens Garage that holds all ten cars at once. When ten Tens Garages are full, the town builds a Hundreds Garage to hold them. Ten Hundreds Garages fill a Thousands Garage. The town keeps going: a Ten Thousands Garage, a Hundred Thousands Garage, and finally the giant Millions Garage. Every new garage holds exactly ten of the garage before it. That is why our number system is called base ten.`,
+                  plain: `A place value is just a garage size. The digit tells you how many garages of that size are full. A zero means that garage size is empty.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `One car          o`,
+                      `Tens Garage      [oooooooooo]`,
+                      `Hundreds Garage  [10 Tens Garages]`,
+                      `Thousands Garage [10 Hundreds Garages]`,
+                      `...and so on up to the Millions Garage`
+                    ].join('\n')
+                  }
+                },
+                {
+                  stage: `Pictorial`,
+                  heading: `Draw the garages as a chart`,
+                  story: `Now draw the town as a chart. Each column is one garage size. Look at 7,342,005. The 7 sits under Millions, so seven Millions Garages are full. The 3 is three Hundred Thousands Garages. The 4 is four Ten Thousands Garages. The 2 is two Thousands Garages. The two zeros under H and T mean the Hundreds and Tens garages are empty. The 5 is five loose cars in the Ones spot.`,
+                  plain: `Read the chart from left to right. Say the number of full garages, then say the garage name. Skip any garage that is empty.`,
+                  visual: {
+                    type: `table`,
+                    caption: `The number 7,342,005 in the garage chart`,
+                    headers: [`Millions`, `H Thous`, `T Thous`, `Thous`, `H`, `T`, `O`],
+                    rows: [
+                      { label: `Digit`, cells: [`7`, `3`, `4`, `2`, `0`, `0`, `5`] },
+                      { label: `Garage`, cells: [`full`, `full`, `full`, `full`, `empty`, `empty`, `full`] }
+                    ]
+                  }
+                },
+                {
+                  stage: `Abstract`,
+                  heading: `Use only the symbols`,
+                  story: `Now put the garages away and use only numbers. To say a big number, read it in groups of three digits. The commas mark the groups. Say each group, then its name. So 7,342,005 is seven million, three hundred forty two thousand, five. To round, look at the digit just to the right of the place you are rounding to. If it is five or more, round up. If it is four or less, stay. To make a number 10 times larger, every digit hops one garage to the left. For 100 times larger, every digit hops two garages to the left, and zeros fill the empty spots.`,
+                  plain: `Bigger by ten means slide every digit one step left. Bigger by one hundred means slide two steps left. The zeros are just placeholders so the digits land in the right garages.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `Round 3,672 to the nearest hundred`,
+                      `Target digit : 6 (hundreds)`,
+                      `Peek at      : 7 (tens)`,
+                      `7 is 5 or more, so go up`,
+                      `Answer       : 3,700`
+                    ].join('\n')
+                  }
+                }
+              ],
+              culture: {
+                title: `Counting Patterns from First Peoples of BC`,
+                text: `People in the land we now call British Columbia have counted for thousands of years, long before any textbook. Many First Nations used the body as a counting tool. One hand gives a group of five. Two hands give a group of ten. Hands and feet together give a group of twenty, which is one whole person. Tlingit is spoken in the northwest corner of BC, near Atlin, and in Alaska and the Yukon. In Tlingit, the number words for six, seven and eight are built from the words for one, two and three, which fits with counting on past the first hand. That is grouping and regrouping, the same big idea as our nesting garages, only with fives, tens and twenties.`,
+                plain: `Counting in fives, tens and twenties is grouping. You fill a small group, then you name a bigger group. That is exactly what the garages do.`,
+                activity: `Count 47 buttons by making groups of five. Then count them again with groups of twenty. Which way needs fewer groups? What is left over each time?`,
+                respect: `Counting words and counting systems belong to the Nations who carry them. To hear the real words said properly, ask your teacher to connect with your local Indigenous Education Department or with Tlingit language speakers who are glad to share.`
+              },
+              recap: `Every digit is a garage size, and moving a digit one place left makes it ten times bigger.`
+            },
+            quest: [
+              {
+                id: `m1q1`,
+                type: `choice`,
+                skill: `Read and write numbers to 10 million`,
+                prompt: `Which choice is the correct word form of 7,342,005?`,
+                options: [
+                  { text: `Seven million, three hundred forty two thousand, five hundred`, trap: `Look at the last group again. The 5 sits in the Ones column, so it is worth five, not five hundred. The Hundreds and Tens columns hold zeros.` },
+                  { text: `Seventy three million, four hundred twenty thousand, five`, trap: `The 7 sits in the Millions column, so it is seven million, not seventy three million. Read the digits in groups of three.` },
+                  { text: `Seven million, three hundred forty two thousand, five`, ok: true },
+                  { text: `Seven million, three hundred four thousand, two hundred five`, trap: `That mixes up the digits. The Thousands group is 3, 4, 2, which reads three hundred forty two thousand. Then the Ones group is 0, 0, 5.` }
+                ],
+                hint: {
+                  nudge: `Read the number in groups of three digits from the left. Say each group, then say its group name.`,
+                  steps: [
+                    `Put the digits in the place value chart. Start at the Ones column on the right and work backward so each digit lands in its own garage.`,
+                    `Millions group: the digit 7 is in the Millions column, so you say seven million.`,
+                    `Thousands group: the digits 3, 4 and 2 sit in H Thous, T Thous and Thous. Say the group as a number, then say thousand.`,
+                    `Ones group: the digits 0, 0 and 5 sit in H, T and O. Zero hundreds and zero tens say nothing, so you only say the 5.`
+                  ],
+                  visual: {
+                    type: `table`,
+                    caption: `Where each digit of 7,342,005 sits`,
+                    headers: [`Millions`, `H Thous`, `T Thous`, `Thous`, `H`, `T`, `O`],
+                    rows: [
+                      { label: `Digit`, cells: [`7`, `3`, `4`, `2`, `0`, `0`, `5`] },
+                      { label: `Group`, cells: [`Millions`, `Thousands`, `Thousands`, `Thousands`, `Ones`, `Ones`, `Ones`] }
+                    ]
+                  }
+                },
+                solution: {
+                  answer: `Seven million, three hundred forty two thousand, five`,
+                  work: `Millions group: 7. Thousands group: 342. Ones group: 005, which is just five.`,
+                  plain: `You say the big group, then the middle group with the word thousand, then the last group. Zeros at the front of a group are silent.`
+                }
+              },
+              {
+                id: `m1q2`,
+                type: `number`,
+                keyboard: `numeric`,
+                placeholder: `Type a number`,
+                skill: `Round whole numbers to the nearest ten thousand`,
+                prompt: `Round 4,589,201 to the nearest ten thousand.`,
+                answer: `4590000`,
+                traps: [
+                  { value: `4580000`, say: `You rounded down. Peek at the digit to the right of the ten thousands place. It is a 9, which is five or more, so the 8 must go up.` },
+                  { value: `4589000`, say: `That is rounding to the nearest thousand. You need the ten thousands place, which is the T Thous column.` },
+                  { value: `4600000`, say: `That is rounding to the nearest hundred thousand. Look one column to the right of that, at the T Thous column.` },
+                  { value: `4589200`, say: `That is rounding to the nearest hundred. You need to round much higher, to the ten thousands place.` },
+                  { value: `5000000`, say: `That is rounding to the nearest million. You need the ten thousands place, which is two columns to the right of the Millions column... count carefully.` }
+                ],
+                hint: {
+                  nudge: `Find the digit in the ten thousands place, then peek at the digit just to its right.`,
+                  steps: [
+                    `Find the ten thousands place. It is the T Thous column, and the digit there is 8.`,
+                    `Peek at the very next digit to the right, in the Thous column. It is a 9.`,
+                    `The rule: five or more, round up. Four or less, stay the same. Is 9 five or more?`,
+                    `Every digit to the right of your target place turns into a zero. Decide what the 8 becomes, then write your new number.`
+                  ],
+                  visual: {
+                    type: `table`,
+                    caption: `Rounding 4,589,201 to the nearest ten thousand`,
+                    headers: [`Millions`, `H Thous`, `T Thous`, `Thous`, `H`, `T`, `O`],
+                    rows: [
+                      { label: `Digit`, cells: [`4`, `5`, `8`, `9`, `2`, `0`, `1`] },
+                      { label: `Job`, cells: [`keep`, `keep`, `target`, `peek`, `zero`, `zero`, `zero`] }
+                    ]
+                  }
+                },
+                solution: {
+                  answer: `4,590,000`,
+                  work: `The target digit is 8 (ten thousands). The peek digit is 9, so the 8 rounds up to 9. Everything after it becomes zero.`,
+                  plain: `4,589,201 is much closer to 4,590,000 than to 4,580,000, so that is where it lands.`
+                }
+              },
+              {
+                id: `m1q3`,
+                type: `number`,
+                keyboard: `numeric`,
+                placeholder: `Type a number`,
+                skill: `Multiply whole numbers by 100`,
+                prompt: `What is 100 times larger than 45,000?`,
+                answer: `4500000`,
+                traps: [
+                  { value: `450000`, say: `That is only 10 times larger. Hopping one garage to the left is times 10. You need to hop two garages for times 100.` },
+                  { value: `45000000`, say: `That is 1,000 times larger. You hopped three garages. Times 100 is only two hops.` },
+                  { value: `45100`, say: `It looks like you added 100. The words 100 times larger mean multiply by 100, not add 100.` },
+                  { value: `4500`, say: `That is 10 times smaller, so the digits hopped the wrong way. Bigger numbers hop to the left.` }
+                ],
+                hint: {
+                  nudge: `Times 100 means every digit hops two garages to the left.`,
+                  steps: [
+                    `Write 45,000 in the chart. The 4 is in T Thous and the 5 is in Thous. The other columns hold zeros.`,
+                    `Times 10 means every digit hops one column to the left. Do that once.`,
+                    `Times 10 again makes times 100. Every digit hops one more column to the left.`,
+                    `Fill any empty columns behind the digits with zeros. Then read your new number.`
+                  ],
+                  visual: {
+                    type: `table`,
+                    caption: `Start with 45,000, then hop two columns to the left`,
+                    headers: [`Millions`, `H Thous`, `T Thous`, `Thous`, `H`, `T`, `O`],
+                    rows: [
+                      { label: `Start`, cells: [`0`, `0`, `4`, `5`, `0`, `0`, `0`] },
+                      { label: `Your turn`, cells: [`?`, `?`, `?`, `?`, `?`, `?`, `?`] }
+                    ]
+                  }
+                },
+                solution: {
+                  answer: `4,500,000`,
+                  work: `45,000 × 100 = 4,500,000. The 4 hops from ten thousands to millions and the 5 hops from thousands to hundred thousands.`,
+                  plain: `Each hop to the left makes a digit ten times bigger. Two hops make it one hundred times bigger.`
+                }
+              }
+            ]
+          },
+
+          /* ---------------- MODULE 2 ---------------- */
+          {
+            id: 2,
+            title: `The Multiplication and Division Engine`,
+            book: `Singapore Math 5A, Order of Operations, Multiplication and Division by a 2 Digit Number`,
+            bc: `Use the order of operations, multiply and divide multi digit numbers, and solve problems with an unknown number.`,
+            kidSummary: `Learn the traffic laws of math so everyone gets the same answer every time.`,
+            bigIdea: {
+              title: `The Ambulance and the Traffic Law`,
+              hook: `Math has traffic laws. If two people follow different orders, they crash into different answers. The traffic law makes sure everybody arrives at the same answer.`,
+              steps: [
+                {
+                  stage: `Concrete`,
+                  heading: `Pull over for the ambulance`,
+                  story: `Picture a busy road with three lanes. Suddenly you hear a siren. An ambulance is coming, and every car must pull over and let it go first. Brackets are the ambulance. Whatever is inside brackets goes first, no matter where it sits in the line. Next come the delivery trucks, which are multiplication and division. Trucks are twins. They share a lane and go in the order they arrive, from left to right. Last come the small cars, addition and subtraction. They are also twins who share a lane and go from left to right.`,
+                  plain: `Brackets first. Then times and divide, left to right. Then add and take away, left to right. Times is not stronger than divide. They are twins, so whichever comes first on the left goes first.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `LANE 1  Ambulance  ( brackets )`,
+                      `LANE 2  Trucks     ×  and  ÷`,
+                      `LANE 3  Cars       +  and  −`,
+                      `Twins in a lane go left to right.`
+                    ].join('\n')
+                  }
+                },
+                {
+                  stage: `Pictorial`,
+                  heading: `Watch the traffic move`,
+                  story: `Let us follow the traffic law with 30 − (2 × 5) + 6 ÷ 3. First the ambulance goes. The bracket holds 2 × 5, which is 10. Now the trucks go. The only truck left is 6 ÷ 3, which is 2. Now only cars are left: 30 − 10 + 2. Cars go left to right, so 30 − 10 is 20, and then 20 + 2 is 22.`,
+                  plain: `Every time you finish a job, rewrite the whole problem with the new number in place. That keeps you from losing anything on the road.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `30 − (2 × 5) + 6 ÷ 3`,
+                      `Ambulance : (2 × 5) = 10`,
+                      `            30 − 10 + 6 ÷ 3`,
+                      `Trucks    : 6 ÷ 3 = 2`,
+                      `            30 − 10 + 2`,
+                      `Cars      : 30 − 10 = 20`,
+                      `            20 + 2 = 22`
+                    ].join('\n')
+                  }
+                },
+                {
+                  stage: `Abstract`,
+                  heading: `Sharing with leftovers and missing numbers`,
+                  story: `Division is fair sharing. Long division shares a big number into equal groups and tells you what is left over. Say 1,250 fans ride buses that seat 12 people each. Follow the loop: divide, multiply, subtract, bring down. 12 goes into 12 one time. Bring down the 5. 12 does not fit into 5, so write 0. Bring down the 0 to make 50. 12 goes into 50 four times, because 12 × 4 is 48. That leaves 2. So you fill 104 buses and 2 fans are left over. The leftover is called the remainder, and it must always be smaller than the number you divide by. For a missing number problem, undo with the opposite. If 6 × [ ? ] = 90 − 42, first find 90 − 42, which is 48. Then divide: 48 ÷ 6 = 8.`,
+                  plain: `Times and divide undo each other, like tying and untying a shoe. When a number is hiding, use the opposite move to find it.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `       104 r 2`,
+                      `     ________`,
+                      ` 12 ) 1250`,
+                      `      12`,
+                      `      __`,
+                      `       05`,
+                      `        0`,
+                      `       __`,
+                      `        50`,
+                      `        48`,
+                      `        __`,
+                      `         2`
+                    ].join('\n')
+                  }
+                }
+              ],
+              recap: `Brackets first, then times and divide, then add and take away, with twins going left to right.`
+            },
+            quest: [
+              {
+                id: `m2q1`,
+                type: `number`,
+                keyboard: `decimal`,
+                placeholder: `Type a number`,
+                skill: `Use the order of operations`,
+                prompt: `Simplify: 45 + (12 × 3) − (48 ÷ 4)`,
+                answer: `69`,
+                traps: [
+                  { value: `30.75`, say: `It looks like you went straight from left to right and ignored the brackets and the traffic law. The ambulances, which are the brackets, must go first.` },
+                  { value: `123`, say: `It looks like you went left to right without the traffic law. Brackets first, then times and divide, then add and take away.` },
+                  { value: `81`, say: `Good start! 45 + 36 is 81. But you forgot the second bracket. There is still a take away of (48 ÷ 4) to do.` },
+                  { value: `93`, say: `You added the last part. Look at the sign in front of the second bracket. It is a take away, not a plus.` },
+                  { value: `33`, say: `You took away 48 instead of 48 ÷ 4. The division inside the bracket goes first, before the take away.` }
+                ],
+                hint: {
+                  nudge: `Ambulance first. Solve inside each bracket before you touch anything else.`,
+                  steps: [
+                    `Crush this FIRST: the bracket (12 × 3). It is an ambulance, so it goes before everything else. It becomes 36.`,
+                    `Crush this SECOND: the other bracket (48 ÷ 4). It is also an ambulance. It becomes 12.`,
+                    `Crush this THIRD: no brackets, trucks or extra jobs are left. Only adding and taking away remain, and they are twins. Go left to right: do the plus first, then do the take away.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `45 + (12 × 3) − (48 ÷ 4)`,
+                      `45 +    36    −    12`,
+                      `Now go left to right. Your turn.`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `69`,
+                  work: `Brackets first: 12 × 3 = 36 and 48 ÷ 4 = 12. Then 45 + 36 = 81, and 81 − 12 = 69.`,
+                  plain: `The brackets are ambulances, so they go first. After that only plus and take away are left, and you do them from left to right.`
+                }
+              },
+              {
+                id: `m2q2`,
+                type: `divrem`,
+                divisor: 12,
+                skill: `Divide a four digit number by a two digit number with a remainder`,
+                prompt: `Use long division to work out 5,432 ÷ 12. Give the quotient and the remainder.`,
+                answer: [452, 8],
+                traps: [
+                  { value: [8, 452], say: `You swapped the boxes. The quotient is how many full groups you can make. The remainder is what is left over, and it is always smaller than 12.` },
+                  { value: [452, 0], say: `Your number of full groups is right! But check whether 12 × your quotient reaches all the way to 5,432. Something is left over.` },
+                  { value: [452, null], say: `Your quotient is right! Now check the leftover. Work out 12 × 452, then see how far that is from 5,432.` },
+                  { value: [451, null], say: `Check your last step. After bringing down the 2 you should have 32, and 12 fits into 32 more than once.` },
+                  { value: [453, null], say: `That is one group too many. Work out 12 × your quotient and check that it does not go past 5,432.` }
+                ],
+                hint: {
+                  nudge: `Use the loop: divide, multiply, subtract, bring down. Start by asking how many times 12 fits into 54.`,
+                  steps: [
+                    `12 does not fit into 5, so use the first two digits and ask about 54.`,
+                    `12 goes into 54 four times, because 12 × 4 = 48. Subtract to get 6.`,
+                    `Bring down the 3 to make 63. 12 goes into 63 five times, because 12 × 5 = 60. Subtract to get 3.`,
+                    `Bring down the 2 to make 32. How many times does 12 fit into 32? Multiply, subtract, and see what is left. That leftover is your remainder, and it must be smaller than 12.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `        4 5 ?`,
+                      `     __________`,
+                      ` 12 ) 5 4 3 2`,
+                      `       4 8`,
+                      `       ___`,
+                      `         6 3`,
+                      `         6 0`,
+                      `         ___`,
+                      `           3 2   <-- your turn`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `452 remainder 8`,
+                  work: `12 × 452 = 5,424, and 5,432 − 5,424 = 8. The remainder 8 is smaller than 12, so we are done.`,
+                  plain: `If 5,432 people ride buses that hold 12 each, you fill 452 buses and 8 people are left over for one more bus.`
+                }
+              },
+              {
+                id: `m2q3`,
+                type: `number`,
+                keyboard: `numeric`,
+                placeholder: `Type the missing number`,
+                skill: `Solve for an unknown number`,
+                prompt: `Find the missing number: 7 × [ ? ] = 1,000 − 545`,
+                answer: `65`,
+                traps: [
+                  { value: `455`, say: `That is 1,000 − 545, which is what 7 times the mystery number equals. The mystery number is one seventh of it, so divide by 7.` },
+                  { value: `3185`, say: `You multiplied by 7. To undo a times 7, you need to divide by 7.` },
+                  { value: `1545`, say: `You added 1,000 and 545. The sign between them is a take away.` }
+                ],
+                hint: {
+                  nudge: `First find what 1,000 − 545 equals. Then ask: 7 times what makes that number?`,
+                  steps: [
+                    `Do the right side first: 1,000 − 545. If it is easier, count up from 545 to 1,000.`,
+                    `Now you have 7 × [ ? ] = your answer. Times and divide undo each other.`,
+                    `So [ ? ] = your answer ÷ 7. Try long division, or build with sevens: 7 × 60 = 420, then see how much is left to reach your number.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `7 × [ ? ] = 1,000 − 545`,
+                      `7 × [ ? ] =    ?`,
+                      `      [ ? ] =    ? ÷ 7`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `65`,
+                  work: `1,000 − 545 = 455. Then 455 ÷ 7 = 65. Check: 7 × 65 = 455.`,
+                  plain: `Seven groups of some number make 455. To find one group, share 455 into 7 equal parts. Each part is 65.`
+                }
+              }
+            ]
+          },
+
+          /* ---------------- MODULE 3 ---------------- */
+          {
+            id: 3,
+            title: `Fractions Operations`,
+            book: `Singapore Math 5A, Fractions`,
+            bc: `Multiply a fraction by a whole number and by another fraction, and divide a whole number by a unit fraction.`,
+            kidSummary: `Find out why multiplying by a fraction can make a number smaller, and why dividing by a fraction can make it bigger.`,
+            bigIdea: {
+              title: `Slicing Up a Slice`,
+              hook: `Multiplying usually makes numbers bigger. Fractions are the surprise. Multiply by a fraction smaller than one, and things get smaller. Here is the reason.`,
+              steps: [
+                {
+                  stage: `Concrete`,
+                  heading: `Half of a half`,
+                  story: `You have a slice of pizza that is one half of the whole pizza. Your friend asks for half of your slice. You cut your slice into two equal pieces and hand one over. That piece is one half of one half, and it is one fourth of the whole pizza. You started with a half and ended up holding less. The secret word is of. One half of one half means one half times one half. Taking a part of something always leaves you with less than the thing you started with.`,
+                  plain: `Times a fraction means take a part of it. A part is always smaller than the whole thing, so the answer shrinks.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `Whole        [____________]`,
+                      `1/2          [______]`,
+                      `1/2 of 1/2   [___]`
+                    ].join('\n')
+                  }
+                },
+                {
+                  stage: `Pictorial`,
+                  heading: `Draw the parts`,
+                  story: `Try 2/3 of 12 cookies. Draw 12 cookies and split them into 3 equal groups of 4. Take 2 of the groups. That is 8 cookies. So 2/3 × 12 = 8. The bottom number tells you how many equal groups to make. The top number tells you how many groups to take. Now a fraction of a fraction. For 1/2 × 3/4, draw a box cut into 4 columns and shade 3 of them. Then cut the box in half across, and keep the top half of the shaded part. The box now has 8 small pieces and 3 of them are shaded, so 1/2 × 3/4 = 3/8.`,
+                  plain: `Multiply the tops to count the shaded pieces. Multiply the bottoms to count all the pieces. The answer says shaded pieces out of all pieces.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `        fourths`,
+                      `row 1  [#][#][#][ ]`,
+                      `row 2  [ ][ ][ ][ ]`,
+                      `3 boxes shaded out of 8 boxes`
+                    ].join('\n')
+                  }
+                },
+                {
+                  stage: `Abstract`,
+                  heading: `The rules in symbols`,
+                  story: `To multiply fractions, multiply the numerators, the top numbers. Then multiply the denominators, the bottom numbers. Then simplify by dividing the top and bottom by a number that fits into both. Now for dividing. Ask how many pieces fit. How many halves are in 4 sandwiches? Each sandwich has 2 halves, so 4 sandwiches have 8 halves. So 4 ÷ 1/2 = 8. The shortcut is to flip the second fraction into its reciprocal and multiply. The reciprocal of 1/2 is 2/1, which is 2. Then 4 × 2 = 8.`,
+                  plain: `When you divide by a tiny piece, lots of pieces fit, so the answer gets bigger. That is the opposite of multiplying by a small fraction, which makes a smaller answer.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `4 ÷ 1/2`,
+                      `flip 1/2 into 2/1`,
+                      `change ÷ into ×`,
+                      `4 × 2 = 8`
+                    ].join('\n')
+                  }
+                }
+              ],
+              recap: `Times a fraction means take a part, so the answer shrinks. Divide by a fraction means count how many pieces fit, so the answer grows.`
+            },
+            quest: [
+              {
+                id: `m3q1`,
+                type: `number`,
+                keyboard: `text`,
+                placeholder: `Type a whole number`,
+                simplest: true,
+                skill: `Multiply a fraction by a whole number`,
+                prompt: `What is 3/4 × 24?`,
+                answer: `18`,
+                traps: [
+                  { value: `72`, say: `You multiplied 3 × 24 but forgot to share by the 4 on the bottom. The bottom number tells you how many equal groups to make.` },
+                  { value: `6`, say: `That is only one fourth of 24. The top number, 3, tells you to take three of those groups.` },
+                  { value: `32`, say: `You divided 24 by 3/4. The sign is times, which means find a part of 24, not how many three fourths fit into it.` }
+                ],
+                hint: {
+                  nudge: `Three fourths of 24 means find one fourth first, then take 3 of those.`,
+                  steps: [
+                    `The bottom number, 4, says cut 24 into 4 equal groups. Work out how many are in each group.`,
+                    `The top number, 3, says take 3 of those groups. How many is 3 groups of that size?`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `24 counters in 4 equal groups`,
+                      `[ ? ] [ ? ] [ ? ] [ ? ]`,
+                      `  1     2     3   not taken`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `18`,
+                  work: `24 ÷ 4 = 6, then 6 × 3 = 18.`,
+                  plain: `Cut 24 into 4 equal groups of 6. Three of the four groups make 18.`
+                }
+              },
+              {
+                id: `m3q2`,
+                type: `number`,
+                keyboard: `text`,
+                placeholder: `Type a fraction like 3/5`,
+                simplest: true,
+                skill: `Multiply a fraction by a fraction`,
+                prompt: `What is 2/3 × 4/5? Write your answer as a fraction in simplest form.`,
+                answer: `8/15`,
+                traps: [
+                  { value: `6/8`, say: `You added the tops and the bottoms. For multiplying, you multiply them instead.` },
+                  { value: `5/6`, say: `It looks like you flipped the second fraction, which is what we do for dividing. Here the sign is times, so there is no flip.` },
+                  { value: `8/8`, say: `Check the bottom numbers. You need to multiply 3 and 5 for the new bottom number.` }
+                ],
+                hint: {
+                  nudge: `Multiply tops with tops and bottoms with bottoms. Then check whether you can simplify.`,
+                  steps: [
+                    `Multiply the numerators, the two top numbers. That gives the new top number.`,
+                    `Multiply the denominators, the two bottom numbers. That gives the new bottom number.`,
+                    `Look for a common factor. Can you divide the top and the bottom by the same number bigger than 1? If yes, divide both to simplify. For example, 2/5 × 5/6 = 10/30, and dividing both by 10 gives 1/3.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      ` 2     4     2 × 4`,
+                      ` _  ×  _  =  _____`,
+                      ` 3     5     3 × 5`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `8/15`,
+                  work: `Tops: 2 × 4 = 8. Bottoms: 3 × 5 = 15. So the answer is 8/15. The numbers 8 and 15 share no factor bigger than 1, so it is already in simplest form.`,
+                  plain: `Picture cutting a box into 15 tiny equal pieces and shading 8 of them. That shaded part is 2/3 of 4/5.`
+                }
+              },
+              {
+                id: `m3q3`,
+                type: `number`,
+                keyboard: `text`,
+                placeholder: `Type a whole number`,
+                simplest: true,
+                skill: `Divide a whole number by a unit fraction`,
+                prompt: `What is 6 ÷ 1/3?`,
+                answer: `18`,
+                traps: [
+                  { value: `2`, say: `You did 6 ÷ 3. But you are dividing by one third, not by three. A third is small, so many thirds fit into 6.` },
+                  { value: `1/18`, say: `You did 1/3 ÷ 6, which is the other way around. The order matters. Here you ask how many thirds fit into 6.` }
+                ],
+                hint: {
+                  nudge: `Ask yourself: how many thirds fit into 6 wholes?`,
+                  steps: [
+                    `One whole holds 3 thirds. Picture 6 wholes, each cut into 3 equal pieces.`,
+                    `Count all the thirds across the 6 wholes.`,
+                    `The shortcut: flip 1/3 into its reciprocal, 3/1, and change the divide sign to a times sign. Then multiply.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `whole 1 : [1/3][1/3][1/3]`,
+                      `whole 2 : [1/3][1/3][1/3]`,
+                      `whole 3 : [1/3][1/3][1/3]`,
+                      `wholes 4 to 6 : your turn`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `18`,
+                  work: `6 ÷ 1/3 = 6 × 3 = 18.`,
+                  plain: `Each whole holds 3 thirds. Six wholes hold 6 × 3 = 18 thirds.`
+                }
+              }
+            ]
+          },
+
+          /* ---------------- MODULE 4 ---------------- */
+          {
+            id: 4,
+            title: `Decimals Mastery`,
+            book: `Singapore Math 5B, Decimals`,
+            bc: `Decimals to thousandths. Add, round and multiply decimals in everyday problems.`,
+            kidSummary: `Use a magic lens to zoom into the tiny spaces between whole numbers.`,
+            bigIdea: {
+              title: `The Magic Microscopic Lens`,
+              hook: `Imagine you own a magic lens. Look through it at any number and it zooms in on the tiny space between whole numbers, where the decimals live.`,
+              steps: [
+                {
+                  stage: `Concrete`,
+                  heading: `Zoom in on a chocolate bar`,
+                  story: `You have one whole chocolate bar. Cut it into 10 equal strips. One strip is one tenth. Now hold your magic lens over one strip and watch it split into 10 tiny squares. Each square is one hundredth of the bar. Zoom in one more time. Each square splits into 10 crumbs, and each crumb is one thousandth of the bar. Every zoom cuts a piece into ten smaller pieces, exactly like the garages, but going smaller instead of bigger.`,
+                  plain: `The decimal point is a fence between whole things and pieces of things. Left of the point are whole bars. Right of the point are pieces. Each step to the right cuts the piece into ten smaller pieces.`,
+                  visual: {
+                    type: `table`,
+                    caption: `The number 14.352 under the magic lens`,
+                    headers: [`Tens`, `Ones`, `.`, `Tenths`, `Hundredths`, `Thousandths`],
+                    rows: [
+                      { label: `Digit`, cells: [`1`, `4`, `.`, `3`, `5`, `2`] }
+                    ]
+                  }
+                },
+                {
+                  stage: `Pictorial`,
+                  heading: `Line up the points`,
+                  story: `To add decimals, line up the decimal points in a straight column, one above the other. This puts tenths over tenths and hundredths over hundredths, so every piece meets its own kind. Fill empty spots with zeros so both numbers have the same number of places. Add from the right, carry when you reach ten, and bring the decimal point straight down into the answer. To round, peek at the digit right after your target place. Look at 5.782 rounded to the nearest hundredth. The hundredths digit is 8. The thousandths digit is 2, which is four or less, so the 8 stays. The answer is 5.78.`,
+                  plain: `Only add pieces of the same size. Lining up the points makes sure tenths are added to tenths, not to hundredths.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `   3.400   (3.4 with zeros added)`,
+                      ` + 2.750`,
+                      ` _______`,
+                      `   6.150`
+                    ].join('\n')
+                  }
+                },
+                {
+                  stage: `Abstract`,
+                  heading: `Multiply by ignoring the point`,
+                  story: `To multiply a decimal by a whole number, ignore the decimal point and multiply as if both were whole numbers. Then put the point back so the answer has as many decimal places as the decimal you started with. Take 0.3 × 4. Ignore the point and do 3 × 4 = 12. The 0.3 had one decimal place, so the answer has one decimal place. That makes 1.2. Try 0.25 × 8. Do 25 × 8 = 200. The 0.25 had two decimal places, so the answer has two: 2.00, which is the same as 2.`,
+                  plain: `Think of 0.3 as three tenths. Four groups of three tenths is twelve tenths, and twelve tenths is 1.2.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `0.3 × 4`,
+                      `3 × 4 = 12`,
+                      `one place after the point`,
+                      `so the answer is 1.2`
+                    ].join('\n')
+                  }
+                }
+              ],
+              recap: `Line up the decimal points before you add, look one place to the right before you round, and count decimal places when you multiply.`
+            },
+            quest: [
+              {
+                id: `m4q1`,
+                type: `number`,
+                keyboard: `decimal`,
+                placeholder: `Type a decimal`,
+                skill: `Add decimals to thousandths`,
+                prompt: `Add: 14.35 + 7.892`,
+                answer: `22.242`,
+                traps: [
+                  { value: `93.27`, say: `You lined up the right edges of the numbers instead of the decimal points. Put the point over the point, and add a zero to 14.35 so the places match.` },
+                  { value: `21.242`, say: `Nearly there! You forgot one carry. When the tenths add to ten or more, carry 1 into the ones place.` },
+                  { value: `22.24`, say: `You dropped the thousandths digit. 14.35 has no thousandths, so it becomes 14.350, and the 2 from 7.892 still counts.` }
+                ],
+                hint: {
+                  nudge: `Line the decimal points up in a straight column before you add anything.`,
+                  steps: [
+                    `Write one number under the other with the decimal points directly above each other.`,
+                    `Fill the empty spot with a zero. 14.35 becomes 14.350, so both numbers have three decimal places.`,
+                    `Add from the right: thousandths, then hundredths, then tenths. Carry 1 whenever a column reaches 10 or more.`,
+                    `Bring the decimal point straight down into your answer, then add the ones and tens.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `   14.350   (zero added)`,
+                      ` +  7.892`,
+                      ` ________`,
+                      `      ?`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `22.242`,
+                  work: `14.350 + 7.892. Thousandths: 0 + 2 = 2. Hundredths: 5 + 9 = 14, write 4 and carry 1. Tenths: 3 + 8 + 1 = 12, write 2 and carry 1. Ones: 4 + 7 + 1 = 12, write 2 and carry 1. Tens: 1 + 1 = 2.`,
+                  plain: `You are adding pieces of the same size, so line them up and carry whenever a column fills to ten, just like the garages.`
+                }
+              },
+              {
+                id: `m4q2`,
+                type: `number`,
+                keyboard: `decimal`,
+                placeholder: `Type a decimal`,
+                skill: `Round decimals to the nearest hundredth`,
+                prompt: `Round 3.456 to the nearest hundredth.`,
+                answer: `3.46`,
+                traps: [
+                  { value: `3.45`, say: `You rounded down. Peek at the thousandths digit, which is 6. Six is five or more, so the hundredths digit goes up.` },
+                  { value: `3.5`, say: `That is rounding to the nearest tenth. Hundredths is the second digit after the decimal point.` },
+                  { value: `3`, say: `That is rounding to the nearest whole number. Keep two digits after the decimal point for hundredths.` },
+                  { value: `3.456`, say: `That is the same number you started with. Rounding means you drop the last digit and decide whether to go up.` }
+                ],
+                hint: {
+                  nudge: `The hundredths place is the second digit after the point. Peek at the digit just after it.`,
+                  steps: [
+                    `Find the hundredths digit. It is the second digit after the decimal point.`,
+                    `Peek at the thousandths digit, the one right after it.`,
+                    `Five or more, round up. Four or less, stay. Then write the answer with only two digits after the point.`
+                  ],
+                  visual: {
+                    type: `table`,
+                    caption: `Rounding 3.456 to the nearest hundredth`,
+                    headers: [`Ones`, `.`, `Tenths`, `Hundredths`, `Thousandths`],
+                    rows: [
+                      { label: `Digit`, cells: [`3`, `.`, `4`, `5`, `6`] },
+                      { label: `Job`, cells: [`keep`, ``, `keep`, `target`, `peek`] }
+                    ]
+                  }
+                },
+                solution: {
+                  answer: `3.46`,
+                  work: `The hundredths digit is 5. The thousandths digit is 6, which is five or more, so the 5 goes up to 6. The answer is 3.46.`,
+                  plain: `3.456 is closer to 3.46 than to 3.45, so we round to 3.46.`
+                }
+              },
+              {
+                id: `m4q3`,
+                type: `number`,
+                keyboard: `decimal`,
+                placeholder: `Type a decimal`,
+                skill: `Multiply a decimal by a one digit whole number`,
+                prompt: `Multiply: 0.45 × 6`,
+                answer: `2.7`,
+                traps: [
+                  { value: `27`, say: `You forgot to put the decimal point back. 0.45 has two decimal places, so your answer needs two decimal places too.` },
+                  { value: `270`, say: `You multiplied 45 × 6 correctly, but you left out the decimal point. Slide it in so there are two digits after it.` },
+                  { value: `0.27`, say: `Your decimal point is one place too far to the left. The answer must have exactly two decimal places.` }
+                ],
+                hint: {
+                  nudge: `Ignore the point, multiply 45 × 6, then count decimal places to put it back.`,
+                  steps: [
+                    `Pretend there is no decimal point and multiply 45 × 6. Do the tens and ones one at a time.`,
+                    `0.45 has two digits after the point, so your answer needs two digits after the point too.`,
+                    `Slide the decimal point into your product so it has two decimal places. If the last digit is a zero, you can drop it.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `0.45   becomes   45   (2 places)`,
+                      `  × 6              × 6`,
+                      `                  ____`,
+                      `                    ?`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `2.7`,
+                  work: `45 × 6 = 270. The 0.45 has two decimal places, so 270 becomes 2.70, which is the same as 2.7.`,
+                  plain: `0.45 is 45 hundredths. Six groups of 45 hundredths is 270 hundredths, and 270 hundredths is 2.70.`
+                }
+              }
+            ]
+          },
+
+          /* ============---- MODULE 5 ============---- */
+          {
+            id: 5,
+            title: `Ratios and Before and After Models`,
+            book: `Singapore Math 5A, Ratio`,
+            bc: `Multiplicative comparison, equivalent ratios, and unit rates used to solve real problems.`,
+            kidSummary: `Use secret recipes and bar models to compare amounts and to track what changes and what stays the same.`,
+            bigIdea: {
+              title: `The Secret Recipe Formula`,
+              hook: `A wizard has a secret potion recipe. Make the potion bigger or smaller, and it still has to taste the same. Ratios are how the wizard keeps the recipe perfect.`,
+              steps: [
+                {
+                  stage: `Concrete`,
+                  heading: `Scale the potion`,
+                  story: `The wizard mixes 3 scoops of moonberry juice with 5 scoops of dragon dew. We write that as the ratio 3 : 5, and we say 3 to 5. Now the whole village wants potion. The wizard makes a double batch, with 6 scoops of moonberry and 10 scoops of dragon dew. Then a triple batch, with 9 and 15. The potion tastes exactly the same every time, because the amounts grow together. Each batch has the same ratio, so 3 : 5, 6 : 10 and 9 : 15 are called equivalent ratios. To find one, multiply both parts by the same number, or divide both parts by the same number.`,
+                  plain: `A ratio compares two amounts. To keep a recipe the same, whatever you do to one side you must do to the other side. Never add the same number to both sides. Multiply or divide both sides.`,
+                  visual: {
+                    type: `table`,
+                    caption: `Equivalent batches of the potion`,
+                    headers: [`Moonberry`, `Dragon dew`],
+                    rows: [
+                      { label: `1 batch`, cells: [`3`, `5`] },
+                      { label: `2 batches`, cells: [`6`, `10`] },
+                      { label: `3 batches`, cells: [`9`, `15`] },
+                      { label: `4 batches`, cells: [`12`, `?`] }
+                    ]
+                  }
+                },
+                {
+                  stage: `Pictorial`,
+                  heading: `Draw the potion as bars`,
+                  story: `Singapore Math draws ratios as bars. Every equal box in the bar is called a unit. Say the wizard's ratio of red potion bottles to blue potion bottles is 3 : 2. Draw 3 units for red and 2 units for blue, and make every unit the same size. If we are told the red bottles total 15, then 3 units equal 15. So 1 unit equals 15 ÷ 3, which is 5. The blue bottles are 2 units, and 2 × 5 is 10. Always follow this order: find what one unit is worth, then use it to find anything else.`,
+                  plain: `A unit is just one small box. All boxes in a picture are the same size. Once you know what one box is worth, every other answer is easy.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `Red   [ 5 ][ 5 ][ 5 ]   3 units = 15`,
+                      `Blue  [ 5 ][ 5 ]        2 units = ?`,
+                      ``,
+                      `1 unit = 15 ÷ 3 = 5`,
+                      `2 units = 2 × 5 = 10`
+                    ].join('\n')
+                  }
+                },
+                {
+                  stage: `Abstract`,
+                  heading: `The Before and After rule`,
+                  story: `Some problems change over time. Singapore Math draws one bar model for Before and one for After. The secret is to find the invariant, the part that does NOT change, and use it to link the two pictures. There are three classic invariants. One: if someone gives some of their things to a friend, the total stays the same. Two: if both people get or lose the same amount, the difference stays the same. Three: if only one person changes, the other person's amount stays the same. Here is an example. Two wizards have gems in the ratio 5 : 3, and 40 gems in all. Before, that is 8 units, so 1 unit is 5 gems. The first wizard has 25 gems and the second has 15. Then the first wizard gives 5 gems to the second. The total is still 40 because gems were only moved. After, they each have 20 gems, so the ratio is 1 : 1.`,
+                  plain: `Before and After problems are like a video with two frames. Ask yourself: what stayed exactly the same between the frames? Use that to connect the two frames.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `BEFORE (5 : 3, total 40)`,
+                      `Wizard 1 [5][5][5][5][5]  25`,
+                      `Wizard 2 [5][5][5]        15`,
+                      ``,
+                      `Wizard 1 gives 5 gems away`,
+                      `Total stays the same: 40`,
+                      ``,
+                      `AFTER  (1 : 1, total 40)`,
+                      `Wizard 1 [20]`,
+                      `Wizard 2 [20]`
+                    ].join('\n')
+                  }
+                }
+              ],
+              recap: `Keep the ratio by multiplying or dividing both parts, find what one unit is worth, and in Before and After problems look for the part that stays the same.`
+            },
+            quest: [
+              {
+                id: `m5q1`,
+                type: `number`,
+                keyboard: `numeric`,
+                placeholder: `Type the missing number`,
+                skill: `Find an equivalent ratio`,
+                prompt: `Find the missing number: 3 : 5 = 12 : [ ? ]`,
+                answer: `20`,
+                traps: [
+                  { value: `14`, say: `You added 9 to both sides because 3 plus 9 makes 12. Ratios grow by multiplying, not adding. Find how many times bigger 12 is than 3.` },
+                  { value: `4`, say: `The number 4 is how many times bigger the recipe got. That is the scale factor, not the missing amount. Use it to grow the 5 as well.` },
+                  { value: `60`, say: `You multiplied 12 by 5. Instead, find what you multiplied 3 by to get 12, then do the same to the 5.` }
+                ],
+                hint: {
+                  nudge: `Ask what you multiplied 3 by to get 12. Then do the very same thing to 5.`,
+                  steps: [
+                    `Look at the left side of each ratio: 3 turned into 12. How many times bigger is 12 than 3? Work it out with 12 ÷ 3.`,
+                    `Both sides of a ratio must grow by the same number of times. So multiply the 5 by that same number.`,
+                    `Check by dividing your two new numbers: they should simplify back to 3 : 5.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      ` 3  :  5`,
+                      ` ×?    ×?   (same number both times)`,
+                      `12  :  ?`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `20`,
+                  work: `12 ÷ 3 = 4, so the recipe was made 4 times bigger. Then 5 × 4 = 20. So 3 : 5 = 12 : 20.`,
+                  plain: `The wizard made 4 batches. 4 batches of 5 scoops of dragon dew is 20 scoops.`
+                }
+              },
+              {
+                id: `m5q2`,
+                type: `number`,
+                keyboard: `numeric`,
+                placeholder: `Type a whole number`,
+                skill: `Solve a ratio word problem with a bar model`,
+                prompt: `The ratio of red balloons to blue balloons is 3 : 2. There are 30 red balloons. What is the total number of balloons?`,
+                answer: `50`,
+                traps: [
+                  { value: `20`, say: `That is the number of blue balloons. The question asks for the total, which means red and blue together.` },
+                  { value: `150`, say: `You multiplied 30 by the 5 units. But 30 is not the value of one unit. 30 is the value of the 3 red units together.` },
+                  { value: `32`, say: `You added 30 and 2. The 2 in the ratio means 2 units, not 2 balloons. First find what one unit is worth.` }
+                ],
+                hint: {
+                  nudge: `Draw a bar for red and a bar for blue. Find what one unit is worth, then count all the units.`,
+                  steps: [
+                    `Red has 3 units and blue has 2 units. The 30 red balloons are shared over the 3 red units.`,
+                    `3 units = 30 balloons, so 1 unit = 30 ÷ 3 = 10 balloons.`,
+                    `Total units = 3 + 2 = 5 units.`,
+                    `Now finish it yourself: 5 units of 10 balloons each. How many balloons is that?`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `Red   [10][10][10]   3 units = 30`,
+                      `Blue  [ ?][ ?]       2 units = ?`,
+                      ``,
+                      `Total = 5 units`,
+                      `5 units = 5 × 10 = ?`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `50`,
+                  work: `3 units = 30, so 1 unit = 10. Blue is 2 units, which is 20. Total is 5 units, which is 5 × 10 = 50.`,
+                  plain: `Each box in the picture holds 10 balloons. There are 5 boxes in all, so there are 50 balloons.`
+                }
+              },
+              {
+                id: `m5q3`,
+                type: `number`,
+                keyboard: `decimal`,
+                placeholder: `Type the distance in kilometers`,
+                skill: `Scale a rate`,
+                prompt: `A drone flies 15 kilometers in 3 hours. At that exact rate, how many kilometers can it fly in 8 hours?`,
+                answer: `40`,
+                traps: [
+                  { value: `5`, say: `That is how far the drone flies in just 1 hour. The question asks about 8 hours, so you need 8 of those hours.` },
+                  { value: `120`, say: `You multiplied 15 by 8, but 15 kilometers is the trip for 3 hours, not for 1 hour. Find the distance for 1 hour first.` },
+                  { value: `45`, say: `That is 15 × 3. To scale a rate, find the distance for 1 hour, then multiply by the new number of hours.` }
+                ],
+                hint: {
+                  nudge: `Find how far the drone flies in 1 hour first. Then scale up to 8 hours.`,
+                  steps: [
+                    `15 kilometers happen over 3 hours. Share it equally: 15 ÷ 3 gives the distance for 1 hour. This is called the unit rate.`,
+                    `8 hours is 8 lots of 1 hour. Multiply the unit rate by 8.`,
+                    `Calculator unlocked: use it to check your multiplication after you work it out by hand.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `3 hours  [15 km]`,
+                      `1 hour   [ ?  km]`,
+                      `8 hours  [ ?  ] × 8 = ?`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `40 kilometers`,
+                  work: `15 ÷ 3 = 5 kilometers each hour. Then 5 × 8 = 40 kilometers.`,
+                  plain: `The drone flies 5 kilometers every hour. After 8 hours, it has done that 8 times, so it flies 40 kilometers.`
+                }
+              }
+            ]
+          },
+
+          /* ============---- MODULE 6 ============---- */
+          {
+            id: 6,
+            title: `Percentages and Financial Scale`,
+            book: `Singapore Math 5B, Percentage`,
+            bc: `Percent as a part of 100, connections between fractions, decimals and percent, and financial literacy such as discounts and taxes.`,
+            kidSummary: `Learn what out of a hundred means and use it to work out sale prices and taxes.`,
+            bigIdea: {
+              title: `Out of a Hundred: The Inventory Chest`,
+              hook: `A medieval merchant keeps every treasure in a chest with exactly 100 slots. Once you know how the chest works, you can work out any discount or tax in your head.`,
+              steps: [
+                {
+                  stage: `Concrete`,
+                  heading: `Count the slots in the chest`,
+                  story: `The merchant's chest has 100 slots, in 10 rows of 10. Say 25 of the slots hold silver coins. The merchant says that 25 out of 100 slots are silver, or 25 percent. The word percent comes from a very old phrase that means for each hundred. The sign is %. So 25% is the same as the fraction 25 over 100, and the same as the decimal 0.25. If 50 slots hold gold, that is 50%, which is one half. If 10 slots hold rubies, that is 10%, which is one tenth.`,
+                  plain: `Percent means out of one hundred. It is a fraction where the bottom number is always 100.`,
+                  visual: {
+                    type: `table`,
+                    caption: `The same amount written three ways`,
+                    headers: [`Fraction`, `Decimal`, `Percent`],
+                    rows: [
+                      { label: `Silver`, cells: [`25/100`, `0.25`, `25%`] },
+                      { label: `Gold`, cells: [`50/100`, `0.50`, `50%`] },
+                      { label: `Rubies`, cells: [`10/100`, `0.10`, `10%`] }
+                    ]
+                  }
+                },
+                {
+                  stage: `Pictorial`,
+                  heading: `Make the bottom number 100`,
+                  story: `What if a fraction does not have 100 on the bottom? Change it so it does. Take 3 out of 20 slots. To turn 20 into 100, multiply by 5. Do the same to the top, so 3 × 5 is 15. That gives 15 over 100, which is 15%. Now find a percent of an amount. To find 10% of $80, remember that 10% is one tenth, so share $80 into 10 parts of $8. To find 25%, think of one quarter. To find any percent, change it to a decimal first, then multiply. 30% is 0.30, and 0.30 × $80 is $24.`,
+                  plain: `To turn a fraction into a percent, grow or shrink the bottom to 100 and do the exact same thing to the top.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      ` 3     ?      15`,
+                      `___ = ___  =  ___  = 15%`,
+                      `20    100     100`,
+                      `× 5 on the top and the bottom`
+                    ].join('\n')
+                  }
+                },
+                {
+                  stage: `Abstract`,
+                  heading: `Discounts and taxes with a $1,000 budget`,
+                  story: `Here is how percent shows up in real BC shopping. A discount takes money off, so you subtract. A sales tax adds money on, so you add. In BC, most things carry 5 percent GST, and many goods also carry 7 percent PST. Rates can change, so always check your receipt. The steps never change. Step one: turn the percent into a decimal by dividing by 100. Step two: multiply that decimal by the price to find the discount or the tax. Step three: subtract the discount from the price, or add the tax to the price. Suppose you have a $1,000 budget and you want a $200 helmet that is on sale for 10% off. The discount is $200 × 0.10, which is $20. The sale price is $180. Now add 5% tax on $180. That is $180 × 0.05, which is $9. You pay $189, and you have $811 left in your budget.`,
+                  plain: `Percent of a price is a small piece of the price. A discount is a piece you take away. A tax is a piece you have to add. Always work out the piece first, then decide whether to subtract it or add it.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `Helmet price      $200`,
+                      `10% off           − $20`,
+                      `Sale price        $180`,
+                      `5% tax on $180    + $9`,
+                      `You pay           $189`,
+                      `Budget left       $1,000 − $189 = $811`
+                    ].join('\n')
+                  }
+                }
+              ],
+              recap: `Turn the percent into a decimal, multiply to find the piece, then subtract it for a discount or add it for a tax.`
+            },
+            quest: [
+              {
+                id: `m6q1`,
+                type: `number`,
+                keyboard: `decimal`,
+                placeholder: `Type the percent`,
+                skill: `Convert a fraction to a percent`,
+                prompt: `Express 18/25 as a percent.`,
+                answer: `72`,
+                traps: [
+                  { value: `0.72`, say: `You found the decimal. That is right on the way, but a percent is the decimal times 100. 0.72 is the same as 72 out of 100, which is 72%.` },
+                  { value: `18`, say: `That is just the top number. The bottom number 25 has to become 100, and the top must change by the same amount.` },
+                  { value: `7.2`, say: `Your decimal point slipped one place. Grow 25 into 100 and do the same to 18 to see the answer.` }
+                ],
+                hint: {
+                  nudge: `Percent means out of 100. Turn the bottom number 25 into 100 and do the same to the top.`,
+                  steps: [
+                    `How many times does 25 fit into 100? Work out 100 ÷ 25.`,
+                    `Multiply the bottom number by that amount to get 100. Multiply the top number 18 by the exact same amount.`,
+                    `Your new fraction is something over 100. The number on top is the percent.`,
+                    `Calculator unlocked: you can check by working out 18 ÷ 25 and moving the decimal point two places to the right.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `18      ?`,
+                      `__  =  ___  = ?%`,
+                      `25     100`,
+                      `multiply top and bottom by the same number`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `72%`,
+                  work: `100 ÷ 25 = 4. Multiply top and bottom by 4: 18 × 4 = 72 and 25 × 4 = 100. So 18/25 = 72/100 = 72%.`,
+                  plain: `If the chest has 25 slots and 18 are filled, then a chest with 100 slots would have 72 filled.`
+                }
+              },
+              {
+                id: `m6q2`,
+                type: `number`,
+                keyboard: `decimal`,
+                placeholder: `Type the sale price in dollars`,
+                skill: `Calculate a sale price after a percent discount`,
+                prompt: `An enchanted shield costs $400, but it is on sale for 25% off. What is the new sale price?`,
+                answer: `300`,
+                traps: [
+                  { value: `100`, say: `That is the amount of the discount, not the new price. You still need to take the discount away from $400.` },
+                  { value: `375`, say: `You took away 25 dollars. But 25% means 25 out of every 100, which is a much bigger amount when the price is $400.` },
+                  { value: `500`, say: `You added the discount. A sale takes money off, so you subtract.` }
+                ],
+                hint: {
+                  nudge: `First turn 25% into a decimal and find the discount. Then subtract it from the price.`,
+                  steps: [
+                    `Turn the percent into a decimal: 25% = 25 ÷ 100 = 0.25.`,
+                    `Multiply the decimal by the price to find the discount: 400 × 0.25.`,
+                    `A sale means money off, so subtract the discount from the original price of $400.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `25% = 25/100 = 0.25`,
+                      `Discount  = $400 × 0.25 = $?`,
+                      `New price = $400 − discount = $?`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `$300`,
+                  work: `25% = 0.25. The discount is $400 × 0.25 = $100. The new price is $400 − $100 = $300.`,
+                  plain: `25% is the same as one quarter. One quarter of $400 is $100, so the shield gets $100 cheaper and costs $300.`
+                }
+              },
+              {
+                id: `m6q3`,
+                type: `number`,
+                keyboard: `decimal`,
+                placeholder: `Type the total cost in dollars`,
+                skill: `Calculate a total cost with sales tax`,
+                prompt: `Find the total cost of a $120 item if the sales tax adds an extra 5% onto the price.`,
+                answer: `126`,
+                traps: [
+                  { value: `6`, say: `That is only the tax. The total cost is the price of the item plus the tax on top of it.` },
+                  { value: `125`, say: `You added 5 dollars. But 5% of $120 is not 5 dollars. Turn 5% into 0.05 and multiply by $120.` },
+                  { value: `114`, say: `You took the tax away. Sales tax is an extra charge, so you add it to the price.` }
+                ],
+                hint: {
+                  nudge: `Turn 5% into a decimal, find the tax, then add it to the price.`,
+                  steps: [
+                    `Turn the percent into a decimal: 5% = 5 ÷ 100 = 0.05.`,
+                    `Multiply the decimal by the price to find the tax: 120 × 0.05.`,
+                    `Tax is an extra charge, so add the tax to the original price of $120.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `5% = 5/100 = 0.05`,
+                      `Tax   = $120 × 0.05 = $?`,
+                      `Total = $120 + tax   = $?`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `$126`,
+                  work: `5% = 0.05. The tax is $120 × 0.05 = $6. The total is $120 + $6 = $126.`,
+                  plain: `5 out of every 100 dollars is tax. For $120, that is a little more than 1 chunk of 100, so the tax is $6 and you pay $126.`
+                }
+              }
+            ]
+          },
+
+          /* ============---- MODULE 7 ============---- */
+          {
+            id: 7,
+            title: `Angular Systems and Geometry`,
+            book: `Singapore Math 5A, Angles`,
+            bc: `Measure angles, and use angle properties of triangles and parallelograms to find unknown angles.`,
+            kidSummary: `Discover why the three corners of every triangle always make a flat runway.`,
+            bigIdea: {
+              title: `The Sharp Turn Runway`,
+              hook: `Every triangle hides a secret. Its three corners always add up to the same number, no matter how big, small, tall or skinny the triangle is.`,
+              steps: [
+                {
+                  stage: `Concrete`,
+                  heading: `Tear the corners and make a runway`,
+                  story: `Cut out any triangle from paper. Tear off its three corners and line them up so the points all touch and the corners sit side by side. The three corners fit together perfectly into a straight line. A straight line is a flat runway, and a flat runway is exactly 180 degrees. Try it again with a fat triangle and a skinny triangle. The runway is always flat. We write degrees with a small circle, like 180°. A right angle, the corner of a book, is 90°. Two right angles make one flat runway.`,
+                  plain: `An angle measures how much a corner is open. A straight line is a half turn, which is 180°. The three corners of any triangle always fill a straight line exactly.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `Three torn corners in a row:`,
+                      ``,
+                      `  A  |  B  |  C`,
+                      `_____|_____|_____   a flat runway`,
+                      `A + B + C = 180°`
+                    ].join('\n')
+                  }
+                },
+                {
+                  stage: `Pictorial`,
+                  heading: `Split the runway into three parts`,
+                  story: `Draw the flat runway as one long bar labeled 180°. Split it into three parts, one for each corner. Say a triangle has corners of 50° and 60°. Put those two parts on the runway. The bit of runway that is left over must belong to the third corner. Add 50 and 60 to get 110, and 180 minus 110 leaves 70. So the third corner is 70°. Special triangles have shortcuts. A right triangle has one 90° corner, so the other two corners must share the leftover 90°. For four sided shapes, a parallelogram has two pairs of parallel sides. Corners that sit next to each other along a side add to 180°, and the corners opposite each other are equal.`,
+                  plain: `When you know two corners, add them up and see how much of the runway is left. Whatever is left belongs to the last corner.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `[ 50° ][ 60° ][  ?  ]`,
+                      `|====== 180° ======|`,
+                      `50 + 60 = 110`,
+                      `180 − 110 = 70°`
+                    ].join('\n')
+                  }
+                },
+                {
+                  stage: `Abstract`,
+                  heading: `The subtraction chain`,
+                  story: `Now use only numbers. For the third angle of a triangle, subtract both known angles from 180 in a chain. For example, 180 − 50 − 60 = 70. You can subtract one at a time: 180 − 50 = 130, then 130 − 60 = 70. Or you can add first and subtract once: 50 + 60 = 110, then 180 − 110 = 70. Both ways give the same answer. In a right triangle, the two sharp corners always add to 90°, because 180 − 90 = 90. In a parallelogram, if one corner is a certain size, its neighbor is 180 minus that size.`,
+                  plain: `The subtraction chain is like paying a bill from a $180 wallet. Take away each known angle one at a time, and what is left in the wallet is the missing angle.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `Triangle: 180 − 50 − 60 = 70`,
+                      `Right triangle: 90 + 40 + ? = 180`,
+                      `                ? = 180 − 90 − 40 = 50`,
+                      `Parallelogram neighbors: 180 − 75 = 105`
+                    ].join('\n')
+                  }
+                }
+              ],
+              culture: {
+                title: `Balance in Tsimshian and Northwest Coast Design`,
+                text: `Northwest Coast artists, including Tsimshian artists whose Nations live along the Skeena River, the Nass River and around Prince Rupert, have long used balance and mirror lines in their designs. Many masks, painted box fronts, and carved pieces are built with a line of symmetry down the middle, so the left half and the right half match. This is called bilateral symmetry. Each half uses careful shapes and curves, and matching angles and lengths on both sides is part of what makes a design feel balanced. Symmetry is a big idea in geometry too. When you fold a shape along its line of symmetry, the corners on one side land exactly on the corners on the other side, so matching angles have the same measure.`,
+                plain: `A line of symmetry is a mirror line. Fold along it and both halves match exactly, including their angles.`,
+                activity: `Fold a sheet of paper in half and draw half of a design starting at the fold. Cut it out and open it. Now measure two matching angles on the left and right halves. What do you notice about them?`,
+                respect: `Designs, crests and stories in Northwest Coast art belong to families and Nations. Make your own original designs and please do not copy crest designs. To learn more, ask your teacher to connect with your local Indigenous Education Department or with Tsimshian artists and educators.`
+              },
+              recap: `The three corners of every triangle add to 180°, so subtract the angles you know from 180 to find the one you do not.`
+            },
+            quest: [
+              {
+                id: `m7q1`,
+                type: `number`,
+                keyboard: `numeric`,
+                placeholder: `Type the angle in degrees`,
+                skill: `Find an unknown angle in a triangle`,
+                prompt: `A triangle has interior angles measuring 45° and 65°. What is the measurement of the third unknown angle?`,
+                answer: `70`,
+                traps: [
+                  { value: `110`, say: `You added 45 and 65, which is a good first step. But 110 is the runway used up, not the corner that is left. Take it away from 180.` },
+                  { value: `115`, say: `You took only 65 away from 180. The 45° corner also uses up part of the runway, so subtract it too.` },
+                  { value: `135`, say: `You took only 45 away from 180. The 65° corner also uses up part of the runway, so subtract it too.` }
+                ],
+                hint: {
+                  nudge: `The three angles of any triangle add to 180°. Subtract the two you know.`,
+                  steps: [
+                    `Start with the full runway of 180°.`,
+                    `Take away the first known angle: 180 − 45 = ?`,
+                    `Take away the second known angle from that answer: ? − 65 = the third angle.`,
+                    `Check: your three angles should add back up to 180.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `[ 45° ][ 65° ][  ?  ]`,
+                      `|====== 180° ======|`,
+                      `180 − 45 = ?`,
+                      `?   − 65 = third angle`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `70°`,
+                  work: `180 − 45 = 135, then 135 − 65 = 70. Check: 45 + 65 + 70 = 180.`,
+                  plain: `The runway is 180 long. The first two corners use up 110 of it, and the last 70 belongs to the third corner.`
+                }
+              },
+              {
+                id: `m7q2`,
+                type: `number`,
+                keyboard: `numeric`,
+                placeholder: `Type the angle in degrees`,
+                skill: `Find a consecutive angle in a parallelogram`,
+                prompt: `In a parallelogram, one interior angle is 110°. What is the measurement of its consecutive adjacent interior angle?`,
+                answer: `70`,
+                traps: [
+                  { value: `110`, say: `The angle that is equal to 110° is the corner directly opposite it, not the one next to it. Neighbors along a side are different.` },
+                  { value: `250`, say: `You took 110 away from 360. In a parallelogram, neighbors along a side share a straight line of 180°, not 360°.` },
+                  { value: `180`, say: `180° is what the two neighbors add up to. You still need to take away the 110° angle to find the neighbor by itself.` }
+                ],
+                hint: {
+                  nudge: `Two angles that sit next to each other along a side of a parallelogram add up to 180°.`,
+                  steps: [
+                    `In a parallelogram, the opposite sides are parallel. That makes two neighbors along a side fill a flat runway together.`,
+                    `So the given angle plus its neighbor equals 180°.`,
+                    `Subtract the angle you know from 180 to find the neighbor.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `110° + ?° = 180°`,
+                      `?° = 180° − 110°`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `70°`,
+                  work: `Neighbors add to 180°. 180 − 110 = 70.`,
+                  plain: `Two neighbors along a side of a parallelogram always share one flat runway of 180°. If one takes 110, the other only gets the 70 that is left.`
+                }
+              },
+              {
+                id: `m7q3`,
+                type: `number`,
+                keyboard: `numeric`,
+                placeholder: `Type the angle in degrees`,
+                skill: `Find an unknown angle in a right triangle`,
+                prompt: `A right angled triangle has one sharp corner measuring 32°. What does the remaining non 90° corner angle measure?`,
+                answer: `58`,
+                traps: [
+                  { value: `148`, say: `You subtracted only 32 from 180. But a right triangle also has a 90° corner, which uses up part of the runway too.` },
+                  { value: `122`, say: `You added 90 and 32. Those two are already used up. The runway is 180, so subtract them from 180.` },
+                  { value: `90`, say: `90 is what the two sharp corners add up to. You still need to take the 32° away from it.` }
+                ],
+                hint: {
+                  nudge: `Every triangle adds to 180°, and a right triangle already has a 90° corner.`,
+                  steps: [
+                    `Start with the full runway of 180°.`,
+                    `Take away the right angle: 180 − 90 = ?`,
+                    `Take away the 32° corner: ? − 32 = the last angle.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `180 − 90 = ?`,
+                      `?   − 32 = last angle`,
+                      `Check: 90 + 32 + last = 180`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `58°`,
+                  work: `180 − 90 = 90, then 90 − 32 = 58. Check: 90 + 32 + 58 = 180.`,
+                  plain: `The right angle takes half the runway. The two sharp corners split the other half, and 32 plus 58 makes 90.`
+                }
+              }
+            ]
+          },
+
+          /* ============---- MODULE 8 ============---- */
+          {
+            id: 8,
+            title: `3D Volume and Spatial Capacity`,
+            book: `Singapore Math 5B, Volume`,
+            bc: `Volume of rectangular prisms, capacity and the link between cubic centimeters and liters.`,
+            kidSummary: `Fill a whole room with cubes and learn how much space it really holds.`,
+            bigIdea: {
+              title: `The 3D Space Explorer Cubes`,
+              hook: `You are a space explorer with a bag of tiny cubes. Your mission is to measure a room three different ways: the fence around it, the floor inside it, and the space all the way up to the ceiling.`,
+              steps: [
+                {
+                  stage: `Concrete`,
+                  heading: `Fence, mats and blocks`,
+                  story: `Explorer job one is the fence. The perimeter is the distance around the edge of a flat shape, like walking all the way around a garden. It is measured in plain units, like meters. Explorer job two is the floor mats. The area is how many flat square mats it takes to cover the floor. It is measured in square units, like square meters. Explorer job three is stacking blocks. The volume is how many cubes fill the whole room from the floor up to the high ceiling. It is measured in cubic units, like cubic meters, written m³. A cube that is 1 meter on every side is 1 cubic meter.`,
+                  plain: `Perimeter is a fence and only measures a line. Area is a floor and measures a flat surface. Volume is a full room and measures the space inside.`,
+                  visual: {
+                    type: `table`,
+                    caption: `Three ways to measure`,
+                    headers: [`What it measures`, `Unit`],
+                    rows: [
+                      { label: `Perimeter`, cells: [`the fence around`, `m`] },
+                      { label: `Area`, cells: [`the floor mats`, `m²`] },
+                      { label: `Volume`, cells: [`the blocks inside`, `m³`] }
+                    ]
+                  }
+                },
+                {
+                  stage: `Pictorial`,
+                  heading: `Build a box one layer at a time`,
+                  story: `Imagine a box that is 4 cubes long, 3 cubes wide and 2 cubes tall. The floor layer has 4 × 3 cubes, which is 12 cubes. That is the floor area. The box is 2 layers tall, so you stack the floor layer 2 times. That makes 12 × 2, which is 24 cubes. The volume is 24 cubic units. Every layer is the same size as the floor, so the volume is just the floor area multiplied by the height.`,
+                  plain: `Count one layer of cubes on the floor, then multiply by how many layers stack up.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `Layer 1  4 × 3 = 12 cubes`,
+                      `Layer 2  4 × 3 = 12 cubes`,
+                      `Total    12 + 12 = 24 cubes`,
+                      `Or       4 × 3 × 2 = 24`
+                    ].join('\n')
+                  }
+                },
+                {
+                  stage: `Abstract`,
+                  heading: `The volume formula and litre link`,
+                  story: `The volume of a cuboid is length times width times height. We write V = L × W × H. Since L × W is the floor area, we can also write V = floor area × H. This gives us a trick for finding a missing measurement. To find the height, divide the volume by the floor area. Volume also tells us how much a container can hold, which is called capacity. A small cube that is 1 centimeter on every side is 1 cubic centimeter, written cm³. It takes 1,000 cubic centimeters to make 1 liter. So to change cubic centimeters into liters, divide by 1,000. For example, 5,000 cm³ ÷ 1,000 = 5 liters.`,
+                  plain: `Multiply the three sides to fill the box. To go backward and find one side, divide the volume by the other measurements. A liter is a bottle that holds 1,000 tiny cubes.`,
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `Volume = Length × Width × Height`,
+                      `Floor area = Length × Width`,
+                      `Volume = Floor area × Height`,
+                      `Height = Volume ÷ Floor area`,
+                      `Liters = cm³ ÷ 1,000`
+                    ].join('\n')
+                  }
+                }
+              ],
+              recap: `Volume is length times width times height, and to find a missing side you divide the volume by the sides you already know.`
+            },
+            quest: [
+              {
+                id: `m8q1`,
+                type: `number`,
+                keyboard: `numeric`,
+                placeholder: `Type the volume in cubic meters`,
+                skill: `Find the volume of a cuboid`,
+                prompt: `A solid cuboid room is 5 meters long, 4 meters wide, and 3 meters tall. What is its total volume in cubic meters?`,
+                answer: `60`,
+                traps: [
+                  { value: `12`, say: `You added 5 + 4 + 3. To fill a room with cubes, you multiply the three measurements instead of adding them.` },
+                  { value: `20`, say: `That is 5 × 4, which is the floor area. You also need to multiply by the height of 3 meters to stack the layers up to the ceiling.` },
+                  { value: `24`, say: `That is 4 × 3 × 2. Check that you used the right numbers: length 5, width 4 and height 3.` }
+                ],
+                hint: {
+                  nudge: `Volume = Length × Width × Height. Multiply all three numbers.`,
+                  steps: [
+                    `Write down the formula: Volume = Length × Width × Height.`,
+                    `Put in the numbers: Length is 5, Width is 4 and Height is 3.`,
+                    `Multiply the length and width first to find the floor area: 5 × 4 = ?`,
+                    `Then multiply the floor area by the height. The unit is cubic meters, written m³.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `Volume = L × W × H`,
+                      `       = 5 × 4 × 3`,
+                      `Floor area = 5 × 4 = ?`,
+                      `Volume = ? × 3 = ?`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `60 cubic meters`,
+                  work: `5 × 4 = 20 square meters of floor. 20 × 3 = 60 cubic meters.`,
+                  plain: `The floor takes 20 cubes to cover. The room is 3 layers tall, so you need 3 layers of 20, which is 60 cubes.`
+                }
+              },
+              {
+                id: `m8q2`,
+                type: `number`,
+                keyboard: `decimal`,
+                placeholder: `Type the number of liters`,
+                skill: `Convert cubic centimeters to liters`,
+                prompt: `A rectangular tank holding 12,000 cubic centimeters of water is emptied. How many liters of liquid capacity does that equal? (Hint: 1,000 cubic centimeters = 1 liter.)`,
+                answer: `12`,
+                traps: [
+                  { value: `12000`, say: `That is the number of cubic centimeters you started with. You still need to change it into liters.` },
+                  { value: `120`, say: `You divided by 100. It takes 1,000 cubic centimeters to make 1 liter, so divide by 1,000.` },
+                  { value: `1.2`, say: `You divided by 10,000. It takes 1,000 cubic centimeters to make 1 liter, so divide by 1,000.` }
+                ],
+                hint: {
+                  nudge: `Every 1,000 cubic centimeters makes 1 liter. Ask how many groups of 1,000 fit into 12,000.`,
+                  steps: [
+                    `Write the link: 1 liter = 1,000 cm³.`,
+                    `To find the liters, divide the cubic centimeters by 1,000.`,
+                    `Divide 12,000 by 1,000. A quick way is to cross out three zeros from both numbers.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `1 liter = 1,000 cm³`,
+                      `Liters = cm³ ÷ 1,000`,
+                      `       = 12,000 ÷ 1,000 = ?`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `12 liters`,
+                  work: `12,000 ÷ 1,000 = 12.`,
+                  plain: `A liter bottle holds 1,000 tiny cubes. 12,000 tiny cubes fill 12 of those bottles.`
+                }
+              },
+              {
+                id: `m8q3`,
+                type: `number`,
+                keyboard: `decimal`,
+                placeholder: `Type the height in meters`,
+                skill: `Find a missing dimension from volume`,
+                prompt: `A cuboid container has a known volume of 60 cubic meters. Its floor area is 20 square meters (Length × Width). How tall is the container?`,
+                answer: `3`,
+                traps: [
+                  { value: `80`, say: `You added 60 and 20. To go backward from a multiplication, divide instead.` },
+                  { value: `1200`, say: `You multiplied. But volume is already the floor area times the height, so to find the height you divide.` },
+                  { value: `40`, say: `You subtracted. Volume comes from multiplying, so undo it by dividing.` }
+                ],
+                hint: {
+                  nudge: `Volume = Floor area × Height. To find the height, divide the volume by the floor area.`,
+                  steps: [
+                    `Start with the formula: Volume = Length × Width × Height.`,
+                    `Length × Width is the floor area, so Volume = Floor area × Height.`,
+                    `You know the volume and the floor area. To find Height, divide: Height = Volume ÷ Floor area.`,
+                    `Check your answer by multiplying: Floor area × Height should give you the volume of 60.`
+                  ],
+                  visual: {
+                    type: `pre`,
+                    text: [
+                      `Volume = Floor area × Height`,
+                      `60     = 20 × ?`,
+                      `Height = 60 ÷ 20 = ?`
+                    ].join('\n')
+                  }
+                },
+                solution: {
+                  answer: `3 meters`,
+                  work: `Height = 60 ÷ 20 = 3. Check: 20 × 3 = 60.`,
+                  plain: `The floor holds one layer of 20 cubes. To reach 60 cubes you need 3 layers, so the box is 3 meters tall.`
+                }
+              }
+            ]
+          }
+        ],
+
+        tabs: [
+          { id: 'big', label: 'The Big Idea', short: 'Big Idea' },
+          { id: 'sim', label: 'Visual Bar Model Simulator', short: 'Bar Model' },
+          { id: 'quest', label: 'Mastery Quest', short: 'Quest' }
+        ],
+        lockMessage: 'Locked! Use Mental Math!',
+
+        /* ---------- State ---------- */
+        currentModule: 1,
+        tab: 'big',
+        drawerOpen: false,
+        calcOpen: false,
+        progress: {},
+        calc: { mode: 'basic', entry: '', prev: null, op: null, fresh: false, flash: false, timer: null },
+        fr: { an: '', ad: '', bn: '', bd: '', op: '+', focus: 'an', result: null, error: '' },
+        q: { module: 1, idx: 0, input: '', input2: '', pick: null, status: 'ask', tries: 0, points: 0, results: [], finished: false, trap: '', msg: '', pct: 0 },
+
+        sim: { a: 12, b: 8, den: 8, num: 3, ua: 3, ub: 2, mult: 2, l: 4, w: 3, h: 2 },
+
+        basicKeys: [
+          { k: 'C', label: 'C', aria: 'Clear', cls: 'bg-red-100 text-red-900' },
+          { k: 'back', label: '\u232B', aria: 'Delete last digit', cls: 'bg-slate-200 text-slate-900' },
+          { k: '%', label: '%', aria: 'Percent', cls: 'bg-indigo-100 text-indigo-900' },
+          { k: '/', label: '\u00F7', aria: 'Divide', cls: 'bg-indigo-600 text-white' },
+          { k: '7', label: '7', aria: '7', cls: 'bg-slate-100 text-slate-900' },
+          { k: '8', label: '8', aria: '8', cls: 'bg-slate-100 text-slate-900' },
+          { k: '9', label: '9', aria: '9', cls: 'bg-slate-100 text-slate-900' },
+          { k: '*', label: '\u00D7', aria: 'Multiply', cls: 'bg-indigo-600 text-white' },
+          { k: '4', label: '4', aria: '4', cls: 'bg-slate-100 text-slate-900' },
+          { k: '5', label: '5', aria: '5', cls: 'bg-slate-100 text-slate-900' },
+          { k: '6', label: '6', aria: '6', cls: 'bg-slate-100 text-slate-900' },
+          { k: '-', label: '\u2212', aria: 'Subtract', cls: 'bg-indigo-600 text-white' },
+          { k: '1', label: '1', aria: '1', cls: 'bg-slate-100 text-slate-900' },
+          { k: '2', label: '2', aria: '2', cls: 'bg-slate-100 text-slate-900' },
+          { k: '3', label: '3', aria: '3', cls: 'bg-slate-100 text-slate-900' },
+          { k: '+', label: '+', aria: 'Add', cls: 'bg-indigo-600 text-white' },
+          { k: '0', label: '0', aria: '0', cls: 'bg-slate-100 text-slate-900', wide: true },
+          { k: '.', label: '.', aria: 'Decimal point', cls: 'bg-slate-100 text-slate-900' },
+          { k: '=', label: '=', aria: 'Equals', cls: 'bg-emerald-600 text-white' }
+        ],
+        frOps: [
+          { k: '+', label: '+', aria: 'Add' },
+          { k: '-', label: '\u2212', aria: 'Subtract' },
+          { k: '*', label: '\u00D7', aria: 'Multiply' },
+          { k: '/', label: '\u00F7', aria: 'Divide' }
+        ],
+
+        /* ---------- Init and persistence ---------- */
+        init() {
+          this.progress = this.blankProgress();
+          try {
+            const saved = JSON.parse(localStorage.getItem('bcsm5.progress') || 'null');
+            if (saved && typeof saved === 'object') {
+              for (const m of this.modules) {
+                if (saved[m.id]) this.progress[m.id] = Object.assign(this.progress[m.id], saved[m.id]);
+              }
+            }
+            if (localStorage.getItem('bcsm5.sound') === 'off') { this.soundOn = false; this.sounds.setEnabled(false); }
+            const last = parseInt(localStorage.getItem('bcsm5.module'), 10);
+            if (last >= 1 && last <= 8) this.currentModule = last;
+          } catch (e) { /* storage unavailable, continue in memory */ }
+          this.q = this.freshQuest();
+          this.$watch('progress', () => this.save(), { deep: true });
+          this.$nextTick(() => this.announce());
+          window.MathApp = this;
+        },
+        blankProgress() {
+          const p = {};
+          for (const m of this.modules) p[m.id] = { big: false, sim: false, quest: false, best: null };
+          return p;
+        },
+        save() {
+          try { localStorage.setItem('bcsm5.progress', JSON.stringify(this.progress)); } catch (e) { /* ignore */ }
+        },
+        announce() {
+          window.dispatchEvent(new CustomEvent('mastery:route', { detail: { module: this.currentModule, tab: this.tab } }));
+        },
+
+        /* ---------- Navigation ---------- */
+        activeModule() { return this.modules[this.currentModule - 1]; },
+        selectModule(id) {
+          if (id < 1 || id > 8) return;
+          this.currentModule = id;
+          this.tab = 'big';
+          this.drawerOpen = false;
+          this.resetCalc();
+          this.q = this.freshQuest();
+          this.resetSim();
+          try { localStorage.setItem('bcsm5.module', String(id)); } catch (e) { /* ignore */ }
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          this.announce();
+        },
+        setTab(id) { this.tab = id; this.announce(); },
+
+        /* ---------- Progress helpers ---------- */
+        isDone(id, section) {
+          if (arguments.length === 0) return this.q.status === 'right' || this.q.status === 'revealed';
+          return !!(this.progress[id] && this.progress[id][section]);
+        },
+        toggleDone(id, section) { this.progress[id][section] = !this.progress[id][section]; },
+        recordScore(id, percent) {
+          const p = this.progress[id];
+          const val = Math.max(0, Math.min(100, Math.round(percent)));
+          if (p.best === null || val > p.best) p.best = val;
+          if (val >= 70) p.quest = true;
+        },
+        modulePercent(id) {
+          const p = this.progress[id];
+          if (!p) return 0;
+          return Math.round(((p.big ? 1 : 0) + (p.sim ? 1 : 0) + (p.quest ? 1 : 0)) / 3 * 100);
+        },
+        overallPercent() {
+          if (!Object.keys(this.progress).length) return 0;
+          let sum = 0;
+          for (const m of this.modules) sum += this.modulePercent(m.id);
+          return Math.round(sum / this.modules.length);
+        },
+        modulesDone() { return this.modules.filter(m => this.modulePercent(m.id) === 100).length; },
+        averageScore() {
+          const scores = this.modules.map(m => this.progress[m.id] ? this.progress[m.id].best : null).filter(v => v !== null);
+          if (!scores.length) return 'None yet';
+          return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) + '%';
+        },
+        resetProgress() {
+          if (window.confirm('Reset all of your progress and scores? This cannot be undone.')) {
+            this.progress = this.blankProgress();
+            this.save();
+            this.q = this.freshQuest();
+          }
+        },
+
+        /* ---------- Big Idea helpers ---------- */
+        stageStyle(stage) {
+          const map = {
+            Concrete: { label: 'Concrete: picture it in real life', card: 'bg-amber-50 border-amber-400', badge: 'bg-amber-400 text-slate-900' },
+            Pictorial: { label: 'Pictorial: draw it', card: 'bg-emerald-50 border-emerald-500', badge: 'bg-emerald-500 text-white' },
+            Abstract: { label: 'Abstract: use the symbols', card: 'bg-indigo-50 border-indigo-400', badge: 'bg-indigo-700 text-white' }
+          };
+          return map[stage] || map.Concrete;
+        },
+        cellClass(c) {
+          if (c === 'target') return 'bg-emerald-200';
+          if (c === 'peek') return 'bg-amber-200';
+          if (c === 'full') return 'bg-emerald-100 text-emerald-900';
+          if (c === 'empty') return 'bg-slate-100 text-slate-600';
+          if (c === '?') return 'bg-indigo-100 text-indigo-800';
+          return '';
+        },
+
+        /* =====================================================
+           MASTERY QUEST ENGINE
+           ===================================================== */
+        freshQuest() {
+          return { module: this.currentModule, idx: 0, input: '', input2: '', pick: null, status: 'ask', tries: 0, points: 0, results: [], finished: false, trap: '', msg: '', pct: 0 };
+        },
+        hasQuest(id) {
+          const m = this.modules[id - 1];
+          return !!(m && m.quest && m.quest.length > 0);
+        },
+        currentQ() {
+          const m = this.activeModule();
+          return (m && m.quest && m.quest[this.q.idx]) || null;
+        },
+        canCheck() {
+          const qu = this.currentQ();
+          if (!qu) return false;
+          if (qu.type === 'choice') return this.q.pick !== null;
+          if (qu.type === 'divrem') return String(this.q.input).trim() !== '' && String(this.q.input2).trim() !== '';
+          return String(this.q.input).trim() !== '';
+        },
+        pickOption(i) {
+          if (this.isDone()) return;
+          this.q.pick = i;
+          this.q.msg = '';
+        },
+        optionClass(i) {
+          const qu = this.currentQ();
+          if (this.isDone()) {
+            if (qu.options[i].ok) return 'bg-emerald-100 border-emerald-600';
+            if (this.q.pick === i) return 'bg-red-100 border-red-500';
+            return 'bg-white border-slate-900/20 opacity-70';
+          }
+          return this.q.pick === i ? 'bg-indigo-100 border-indigo-600' : 'bg-white border-slate-900/20 hover:border-indigo-400';
+        },
+        dotClass(i) {
+          const r = this.q.results[i];
+          if (r) return r.points > 0 ? 'bg-emerald-500' : 'bg-red-400';
+          if (!this.q.finished && i === this.q.idx) return 'bg-indigo-700';
+          return 'bg-slate-300';
+        },
+
+        /* Turn typed text into an exact fraction {n, d}. Handles 42, 3.5, 1,000 and 3/4. */
+        parseValue(raw) {
+          if (raw === null || raw === undefined) return null;
+          let s = String(raw).trim().replace(/[,\s$%]/g, '');
+          if (s === '') return null;
+          let m = s.match(/^(\d+)\/(\d+)$/);
+          if (m) {
+            const n = parseInt(m[1], 10), d = parseInt(m[2], 10);
+            if (d === 0) return null;
+            return { n: n, d: d, isFraction: true };
+          }
+          if (s.charAt(0) === '.') s = '0' + s;
+          if (!/^\d+(\.\d+)?$/.test(s)) return null;
+          const parts = s.split('.');
+          const frac = parts[1] || '';
+          if (frac.length > 6 || parts[0].length > 12) return null;
+          return { n: parseInt(parts[0] + frac, 10), d: Math.pow(10, frac.length), isFraction: false };
+        },
+        sameValue(a, b) { return !!(a && b) && a.n * b.d === b.n * a.d; },
+
+        evaluate(qu) {
+          const q = this.q;
+          if (qu.type === 'choice') {
+            const o = qu.options[q.pick];
+            return o.ok ? { result: 'right' } : { result: 'wrong', trap: o.trap || '' };
+          }
+          if (qu.type === 'number') {
+            const v = this.parseValue(q.input);
+            if (!v) return { result: 'invalid', msg: 'Please type a number, like 42, 3.5 or 3/4.' };
+            const ans = this.parseValue(qu.answer);
+            if (this.sameValue(v, ans)) {
+              if (qu.simplest && v.isFraction && this.gcd(v.n, v.d) > 1) {
+                return { result: 'almost', msg: 'That value is correct! Now write it in simplest form by dividing the top and the bottom by the same number.' };
+              }
+              return { result: 'right' };
+            }
+            for (const t of (qu.traps || [])) {
+              const tv = this.parseValue(t.value);
+              if (tv && this.sameValue(tv, v)) return { result: 'wrong', trap: t.say };
+            }
+            return { result: 'wrong', trap: '' };
+          }
+          if (qu.type === 'divrem') {
+            const a = String(q.input).replace(/[,\s]/g, '');
+            const b = String(q.input2).replace(/[,\s]/g, '');
+            if (!/^\d+$/.test(a) || !/^\d+$/.test(b)) return { result: 'invalid', msg: 'Please type whole numbers in both boxes.' };
+            const qv = parseInt(a, 10), rv = parseInt(b, 10);
+            if (qv === qu.answer[0] && rv === qu.answer[1]) return { result: 'right' };
+            for (const t of (qu.traps || [])) {
+              const okQ = t.value[0] === null || t.value[0] === qv;
+              const okR = t.value[1] === null || t.value[1] === rv;
+              if (okQ && okR) return { result: 'wrong', trap: t.say };
+            }
+            if (rv >= qu.divisor) {
+              return { result: 'wrong', trap: 'The leftover must be smaller than ' + qu.divisor + '. If it is not, then ' + qu.divisor + ' fits at least one more time.' };
+            }
+            return { result: 'wrong', trap: '' };
+          }
+          return { result: 'invalid', msg: 'This question type is not ready yet.' };
+        },
+
+        checkAnswer() {
+          const qu = this.currentQ();
+          if (!qu || this.isDone() || !this.canCheck()) return;
+          const q = this.q;
+          q.msg = '';
+          q.trap = '';
+          const r = this.evaluate(qu);
+          if (r.result === 'invalid') { q.msg = r.msg; return; }
+          if (r.result === 'almost') { q.msg = r.msg; q.status = 'almost'; return; }
+          if (r.result === 'right') {
+            const pts = q.tries === 0 ? 1 : (q.tries === 1 ? 0.5 : 0.25);
+            q.points += pts;
+            q.results[q.idx] = { points: pts, tries: q.tries, revealed: false };
+            q.status = 'right';
+            this.sounds.playSuccess();
+            return;
+          }
+          q.tries += 1;
+          q.status = 'wrong';
+          q.trap = r.trap || '';
+          this.sounds.playFailure();
+        },
+        revealAnswer() {
+          if (this.isDone()) return;
+          this.q.results[this.q.idx] = { points: 0, tries: this.q.tries, revealed: true };
+          this.q.status = 'revealed';
+          this.q.msg = '';
+        },
+        doneHeadline() {
+          if (this.q.tries === 0) return 'Correct on your first try!';
+          if (this.q.tries === 1) return 'Correct! Nice fix.';
+          return 'Correct! You kept going.';
+        },
+        nextQuestion() {
+          const q = this.q;
+          const total = this.activeModule().quest.length;
+          if (q.idx < total - 1) {
+            q.idx += 1;
+            q.input = ''; q.input2 = ''; q.pick = null;
+            q.status = 'ask'; q.tries = 0; q.trap = ''; q.msg = '';
+            this.$nextTick(() => {
+              const el = document.getElementById('quest-input');
+              if (el) el.focus({ preventScroll: true });
+              const panel = document.getElementById('panel-quest');
+              if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+          } else {
+            q.pct = Math.round(q.points / total * 100);
+            q.finished = true;
+            this.recordScore(this.currentModule, q.pct);
+            this.$nextTick(() => {
+              const panel = document.getElementById('panel-quest');
+              if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+          }
+        },
+        retryQuest() { this.q = this.freshQuest(); },
+        resultLabel(i) {
+          const r = this.q.results[i];
+          if (!r) return 'Not answered';
+          if (r.revealed) return 'Answer shown';
+          if (r.tries === 0) return 'Correct on the first try';
+          return 'Correct after ' + r.tries + (r.tries === 1 ? ' miss' : ' misses');
+        },
+
+        /* =====================================================
+           BAR MODEL SIMULATOR ENGINE
+           ===================================================== */
+        simDefaults() { return { a: 12, b: 8, den: 8, num: 3, ua: 3, ub: 2, mult: 2, l: 4, w: 3, h: 2 }; },
+        resetSim() { Object.assign(this.sim, this.simDefaults()); },
+        simGroup() {
+          const m = this.currentModule;
+          if (m <= 2) return 'part';
+          if (m <= 4) return 'fraction';
+          if (m <= 6) return 'ratio';
+          return 'volume';
+        },
+        simControls() {
+          const g = this.simGroup();
+          if (g === 'part') return [
+            { key: 'a', label: 'Part A', min: 1, max: 50 },
+            { key: 'b', label: 'Part B', min: 1, max: 50 }
+          ];
+          if (g === 'fraction') return [
+            { key: 'den', label: 'Total Slices (Denominator)', min: 2, max: 20, type: 'select' },
+            { key: 'num', label: 'Colored Slices (Numerator)', min: 0, max: this.sim.den }
+          ];
+          if (g === 'ratio') return [
+            { key: 'ua', label: 'Ratio Blocks for Unit A', min: 1, max: 8 },
+            { key: 'ub', label: 'Ratio Blocks for Unit B', min: 1, max: 8 },
+            { key: 'mult', label: 'Multiplier (how many batches)', min: 1, max: 10 }
+          ];
+          return [
+            { key: 'l', label: 'Length', min: 1, max: 8 },
+            { key: 'w', label: 'Width', min: 1, max: 8 },
+            { key: 'h', label: 'Height (layers)', min: 1, max: 8 }
+          ];
+        },
+        setSim(key, val) {
+          const c = this.simControls().find(x => x.key === key);
+          const v0 = parseInt(val, 10);
+          if (!c || isNaN(v0)) return;
+          this.sim[key] = Math.max(c.min, Math.min(c.max, v0));
+          if (key === 'den' && this.sim.num > this.sim.den) this.sim.num = this.sim.den;
+        },
+        stepSim(key, d) { this.setSim(key, this.sim[key] + d); },
+        simPct(k) { return parseFloat((this.sim[k] / (this.sim.a + this.sim.b) * 100).toFixed(2)); },
+        simDecimal() { return String(parseFloat((this.sim.num / this.sim.den).toFixed(3))); },
+        simPercent() { return String(parseFloat((this.sim.num / this.sim.den * 100).toFixed(1))); },
+        simSimplestText() {
+          const n = this.sim.num, d = this.sim.den;
+          if (n === 0) return 'No slices are colored, so the fraction is 0.';
+          const g = this.gcd(n, d);
+          if (g === 1) return n + '/' + d + ' is already in simplest form.';
+          return n + '/' + d + ' is the same amount as ' + (n / g) + '/' + (d / g) + ' in simplest form.';
+        },
+        simRatioViews() {
+          const views = [{ label: 'Before: 1 batch', m: 1 }];
+          if (this.sim.mult > 1) views.push({ label: 'After: ' + this.sim.mult + ' batches', m: this.sim.mult });
+          return views;
+        },
+        simRatioSimplest() {
+          const g = this.gcd(this.sim.ua, this.sim.ub);
+          if (g === 1) return 'The ratio ' + this.sim.ua + ' : ' + this.sim.ub + ' is already in simplest form. Every scaled ratio matches it.';
+          return 'Simplest form is ' + (this.sim.ua / g) + ' : ' + (this.sim.ub / g) + '. Divide both numbers by ' + g + ' to get there.';
+        },
+        simLayerNums() {
+          const out = [];
+          for (let n = this.sim.h; n >= 1; n--) out.push(n);
+          return out;
+        },
+        layerColor(n) {
+          const shades = ['bg-emerald-300', 'bg-emerald-400', 'bg-teal-400', 'bg-sky-400', 'bg-indigo-400', 'bg-indigo-500', 'bg-violet-500', 'bg-violet-600'];
+          return shades[(n - 1) % shades.length];
+        },
+        simIntro() {
+          const g = this.simGroup();
+          if (g === 'part') return 'Move the sliders and watch two boxes share one long bar. The total is worked out for you.';
+          if (g === 'fraction') return 'Choose how many equal slices the bar has, then color some of them to build a fraction.';
+          if (g === 'ratio') return 'Build two rows of blocks, then scale up and watch both rows grow together.';
+          return 'Change the length, width and height and watch flat layers of cubes stack up into a box.';
+        },
+        simPlain() {
+          const s = this.sim, g = this.simGroup();
+          if (g === 'part') return 'Part A is ' + s.a + ' and Part B is ' + s.b + '. Put them side by side and you get one long bar worth ' + (s.a + s.b) + '. The longer box is the bigger part. If you know the whole and one part, take the part away to find the other one.';
+          if (g === 'fraction') return 'The bar is cut into ' + s.den + ' equal pieces. You colored ' + s.num + ' of them, so the fraction is ' + s.num + ' out of ' + s.den + '. More colored pieces means a bigger fraction. When you cut into more pieces, each piece gets smaller.';
+          if (g === 'ratio') return 'For every ' + (s.ua * s.mult) + ' blocks in row A there are ' + (s.ub * s.mult) + ' blocks in row B. Each small group is one batch of the recipe. Making more batches is like making a bigger potion. Both rows grow together, so the ratio stays the same.';
+          return 'One flat layer of the floor has ' + (s.l * s.w) + ' cubes. You stacked ' + s.h + ' layers, so the box holds ' + (s.l * s.w * s.h) + ' cubes. Every layer you add makes the volume grow by the same amount as the floor.';
+        },
+        simTry() {
+          const g = this.simGroup();
+          if (g === 'part') return 'Make Part A and Part B the same size. What do you notice about the two boxes? Now make Part A much bigger than Part B.';
+          if (g === 'fraction') return 'Slide Colored Slices all the way up to the total. What fraction is that? Then try setting it to 4 of 8 and 2 of 4. Do they look the same?';
+          if (g === 'ratio') return 'Set the multiplier to 4. Does the ratio look different, or is it just more batches of the same recipe? Now change Unit A and see how the rows lose their match.';
+          return 'Make the height twice as big. What happens to the volume? Now set the height back and double the length instead.';
+        },
+
+        /* ---------- Calculator gate ---------- */
+        calcLocked() { return this.currentModule >= 1 && this.currentModule <= 4; },
+        triggerLock() {
+          this.sounds.playLockAlert();
+          this.calc.flash = true;
+          clearTimeout(this.calc.timer);
+          this.calc.timer = setTimeout(() => { this.calc.flash = false; }, 2200);
+        },
+        resetCalc() {
+          clearTimeout(this.calc.timer);
+          this.calc.entry = ''; this.calc.prev = null; this.calc.op = null; this.calc.fresh = false; this.calc.flash = false;
+          this.fr.an = ''; this.fr.ad = ''; this.fr.bn = ''; this.fr.bd = '';
+          this.fr.op = '+'; this.fr.focus = 'an'; this.fr.result = null; this.fr.error = '';
+        },
+        setCalcMode(mode) { this.calc.mode = mode; this.calc.flash = false; },
+
+        /* ---------- Basic calculator ---------- */
+        fmt(n) {
+          if (!isFinite(n)) return 'Cannot do that';
+          const r = parseFloat(n.toPrecision(12));
+          return String(r);
+        },
+        opSymbol(o) { return { '+': '+', '-': '\u2212', '*': '\u00D7', '/': '\u00F7' }[o] || ''; },
+        basicDisplay() {
+          if (this.calc.flash) return this.lockMessage;
+          if (this.calc.entry !== '') return this.calc.entry;
+          if (this.calc.prev !== null) return this.fmt(this.calc.prev);
+          return '0';
+        },
+        basicExpression() {
+          if (this.calc.prev !== null && this.calc.op) return this.fmt(this.calc.prev) + ' ' + this.opSymbol(this.calc.op);
+          return '';
+        },
+        applyOp(a, b, op) {
+          if (op === '+') return a + b;
+          if (op === '-') return a - b;
+          if (op === '*') return a * b;
+          if (op === '/') return b === 0 ? NaN : a / b;
+          return b;
+        },
+        pressBasic(k) {
+          if (this.calcLocked()) { this.triggerLock(); return; }
+          this.sounds.playClick();
+          const c = this.calc;
+          if (/^[0-9]$/.test(k)) {
+            if (c.fresh) { c.entry = ''; c.prev = null; c.op = null; c.fresh = false; }
+            if (c.entry.replace('.', '').length >= 12) return;
+            c.entry = (c.entry === '0') ? k : c.entry + k;
+          } else if (k === '.') {
+            if (c.fresh) { c.entry = ''; c.prev = null; c.op = null; c.fresh = false; }
+            if (c.entry.includes('.')) return;
+            c.entry = (c.entry === '' ? '0' : c.entry) + '.';
+          } else if (k === 'C') {
+            c.entry = ''; c.prev = null; c.op = null; c.fresh = false;
+          } else if (k === 'back') {
+            if (c.fresh) return;
+            c.entry = c.entry.slice(0, -1);
+          } else if (k === '%') {
+            const v = c.entry !== '' ? parseFloat(c.entry) : (c.prev !== null ? c.prev : 0);
+            c.entry = this.fmt(v / 100);
+          } else if (['+', '-', '*', '/'].includes(k)) {
+            if (c.entry !== '') {
+              const v = parseFloat(c.entry);
+              if (c.prev !== null && c.op && !c.fresh) c.prev = this.applyOp(c.prev, v, c.op);
+              else c.prev = v;
+              c.entry = '';
+            }
+            if (c.prev !== null) { c.op = k; c.fresh = false; }
+          } else if (k === '=') {
+            if (c.prev !== null && c.op && c.entry !== '') {
+              const result = this.applyOp(c.prev, parseFloat(c.entry), c.op);
+              c.entry = this.fmt(result);
+              c.prev = null; c.op = null; c.fresh = true;
+            }
+          }
+        },
+
+        /* ---------- Fraction calculator ---------- */
+        frOpLabel() { return this.opSymbol(this.fr.op); },
+        gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { const t = b; b = a % b; a = t; } return a || 1; },
+        pressFraction(k) {
+          if (this.calcLocked()) { this.triggerLock(); return; }
+          this.sounds.playClick();
+          const f = this.fr;
+          f.error = '';
+          if (/^[0-9]$/.test(k)) {
+            if (f.result) f.result = null;
+            if (f[f.focus].length >= 4) return;
+            f[f.focus] = (f[f.focus] === '0') ? k : f[f.focus] + k;
+          } else if (k === 'back') {
+            f[f.focus] = f[f.focus].slice(0, -1);
+            f.result = null;
+          } else if (k === 'C') {
+            f.an = ''; f.ad = ''; f.bn = ''; f.bd = ''; f.op = '+'; f.focus = 'an'; f.result = null; f.error = '';
+          } else if (k.indexOf('op:') === 0) {
+            f.op = k.slice(3);
+            f.result = null;
+          } else if (k === '=') {
+            this.computeFraction();
+          }
+        },
+        computeFraction() {
+          const f = this.fr;
+          if (f.an === '' || f.ad === '' || f.bn === '' || f.bd === '') { f.error = 'Fill in all four boxes first.'; f.result = null; return; }
+          const an = parseInt(f.an, 10), ad = parseInt(f.ad, 10), bn = parseInt(f.bn, 10), bd = parseInt(f.bd, 10);
+          if (ad === 0 || bd === 0) { f.error = 'A bottom number can never be zero. You cannot share into zero groups.'; f.result = null; return; }
+          let n, d;
+          if (f.op === '+') { n = an * bd + bn * ad; d = ad * bd; }
+          else if (f.op === '-') { n = an * bd - bn * ad; d = ad * bd; }
+          else if (f.op === '*') { n = an * bn; d = ad * bd; }
+          else {
+            if (bn === 0) { f.error = 'You cannot divide by a fraction that equals zero.'; f.result = null; return; }
+            n = an * bd; d = ad * bn;
+          }
+          if (d < 0) { n = -n; d = -d; }
+          const g = this.gcd(n, d);
+          n = n / g; d = d / g;
+          const dec = parseFloat((n / d).toFixed(6)).toString();
+          const text = d === 1 ? String(n) : n + ' over ' + d;
+          let mixed = '';
+          if (d !== 1 && Math.abs(n) > d) {
+            const whole = Math.trunc(n / d);
+            const rem = Math.abs(n) - Math.abs(whole) * d;
+            mixed = rem === 0 ? String(whole) : whole + ' and ' + rem + ' over ' + d;
+          }
+          f.result = { text: text, mixed: mixed, decimal: dec };
+        }
+      };
+    }
+  </script>
+
+  <!-- Alpine loads last so app() is defined first -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+</body>
+</html>
