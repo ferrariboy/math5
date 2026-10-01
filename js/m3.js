@@ -117,7 +117,7 @@
         'Always take the smaller amount from the bigger amount.'
       ],
       rule: 'Make the bottoms match. Take away the tops. Keep the bottom.',
-      mistake: '3/4 − 1/6 is not 2/(-2). Do not take away the bottoms.',
+      mistake: 'Do not take away the bottoms. 3/4 − 1/6 is not 2 over 2.',
       steps: [
         x('Work out 3/4 − 1/6. The bottoms are different.', '3/4 − 1/6'),
         note('Find a number that both 4 and 6 go into.', 'Common denominator', ['Multiples of 4: 4, 8, 12', 'Multiples of 6: 6, 12', 'Both meet at 12']),

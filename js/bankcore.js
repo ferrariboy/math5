@@ -66,9 +66,23 @@
   /* lines(cap, lines, hiFrom): monospace layout */
   function lines(cap, ls, hiFrom) { return { kind: 'lines', cap: cap, lines: ls, hiFrom: hiFrom === undefined ? 99 : hiFrom }; }
 
+  /* numline(cap, o): a number line. o = { min, max, ticks:[{v,label}], marks:[{v,label}], jumps:[{from,to,label}] } */
+  function numline(cap, o) { return { kind: 'numline', cap: cap, min: o.min, max: o.max, ticks: o.ticks || [], marks: o.marks || [], jumps: o.jumps || [] }; }
+  /* clock(cap, h, m, tag): an analog clock. h is 1 to 12, m is 0 to 59 */
+  function clock(cap, h, m, tag) { return { kind: 'clock', cap: cap, h: h, m: m, tag: tag || '' }; }
+  /* bargraph(cap, labels, values, o): vertical bars. o = { max, title, hi } where hi is the index to highlight */
+  function bargraph(cap, labels, values, o) { o = o || {}; return { kind: 'bargraph', cap: cap, labels: labels, values: values, max: o.max || Math.max.apply(null, values), title: o.title || '', hi: o.hi === undefined ? -1 : o.hi }; }
+
   /* ---------- Question builders ---------- */
   function capsOf(steps) { return (steps || []).map(function (s) { return s.cap; }); }
   function trap(value, say) { return { value: value, say: say }; }
+
+  /* A trap that equals the right answer would never be shown, so drop it. */
+  function cleanTraps(traps, answer) {
+    function val(t) { var m = String(t).match(/^(\d+)\/(\d+)$/); return m ? m[1] / m[2] : parseFloat(t); }
+    var a = val(answer);
+    return (traps || []).filter(function (t) { var v = val(t.value); return !(String(t.value) === String(answer) || (isFinite(v) && isFinite(a) && Math.abs(v - a) < 1e-9)); });
+  }
 
   /* num(o): a typed answer. o.teach is the list of animated steps for Teach Me. */
   function num(o) {
@@ -76,7 +90,7 @@
     return {
       type: 'number', keyboard: o.keyboard || 'text', placeholder: o.placeholder || 'Type your answer',
       simplest: !!o.simplest, skill: o.skill, prompt: o.prompt, answer: String(o.answer),
-      traps: o.traps || [],
+      traps: cleanTraps(o.traps, o.answer),
       hint: { nudge: o.nudge || caps[0] || 'Take it one step at a time.', steps: o.hintSteps || caps.slice(1, 4) },
       solution: { answer: o.answerText || String(o.answer), work: o.work || '', plain: o.plain || '' },
       teach: { steps: o.teach || [] }
@@ -109,6 +123,8 @@
   /* ---------- Registry ---------- */
   var skills = {};
   function register(id, list) { skills[id] = list; }
+  /* extend(id, list) adds more skills to a module that is already registered */
+  function extend(id, list) { skills[id] = (skills[id] || []).concat(list); }
   function has(id) { return !!(skills[id] && skills[id].length); }
 
   function makeUnique(skill, seen) {
@@ -150,8 +166,8 @@
   }
 
   window.Bank = {
-    R: R, register: register, has: has, practiceSet: practiceSet, testSet: testSet, skills: skills,
-    s: { x: x, note: note, bars: bars, fb: fb, row: row, grid: grid, groups: groups, lines: lines },
+    R: R, register: register, extend: extend, has: has, practiceSet: practiceSet, testSet: testSet, skills: skills,
+    s: { x: x, note: note, bars: bars, fb: fb, row: row, grid: grid, groups: groups, lines: lines, numline: numline, clock: clock, bargraph: bargraph },
     q: { num: num, choice: choice, divrem: divrem, trap: trap }
   };
   window.MATH_LESSONS = window.MATH_LESSONS || {};

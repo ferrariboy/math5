@@ -1433,22 +1433,56 @@ window.MATH_META = {
 };
 window.MATH_MODULES.forEach(function (m) { Object.assign(m, window.MATH_META[m.id]); });
 
+
+/* ---- Pass 2: BC strand modules. Lessons, vocabulary and questions live in js/m9.js to js/m21.js ---- */
+window.MATH_MODULES = window.MATH_MODULES.concat([
+  { id: 9, title: 'Equivalent Fractions and Benchmarks', book: 'Method: Concrete, Pictorial, Abstract', bc: 'Compare and order fractions, find equivalent fractions, and use benchmarks such as 0, 1/2 and 1.', kidSummary: 'Place fractions on a number line, use 0, one half and 1 as benchmarks, and switch between mixed numbers and improper fractions.' },
+  { id: 10, title: 'Multiplication and Division Facts', book: 'Method: Concrete, Pictorial, Abstract', bc: 'Recall multiplication facts to 12 × 12 and the related division facts. Use fact families and strategies.', kidSummary: 'Get quick and confident with times tables and the division facts that go with them.' },
+  { id: 11, title: 'Estimating Answers', book: 'Method: Concrete, Pictorial, Abstract', bc: 'Estimate sums, differences, products and quotients by rounding and using compatible numbers.', kidSummary: 'Use friendly numbers to make a smart guess, then check if an answer makes sense.' },
+  { id: 12, title: 'Number Patterns and Tables', book: 'Method: Concrete, Pictorial, Abstract', bc: 'Describe, extend and create increasing and decreasing patterns using tables and rules.', kidSummary: 'Find the rule in a pattern, fill in a table and predict what comes next.' },
+  { id: 13, title: 'One Step Equations', book: 'Method: Concrete, Pictorial, Abstract', bc: 'Solve one step equations with a letter for the unknown, using whole numbers and the inverse operation.', kidSummary: 'Solve for the mystery number using a balance and undo moves.' },
+  { id: 14, title: 'Area and Perimeter', book: 'Method: Concrete, Pictorial, Abstract', bc: 'Find area and perimeter of rectangles, squares and combined shapes. Find missing sides.', kidSummary: 'Measure the space inside a shape and the distance around it.' },
+  { id: 15, title: 'Elapsed Time', book: 'Method: Concrete, Pictorial, Abstract', bc: 'Read times, use 12 hour and 24 hour clocks, and calculate elapsed time and convert time units.', kidSummary: 'Work out how long something takes and when it ends, on 12 hour and 24 hour clocks.' },
+  { id: 16, title: '2D Shapes and 3D Solids', book: 'Method: Concrete, Pictorial, Abstract', bc: 'Describe polygons, triangles, quadrilaterals, and 3D solids by faces, edges and vertices. Lines of symmetry.', kidSummary: 'Name shapes, count their sides and corners, and learn how flat shapes fold into solids.' },
+  { id: 17, title: 'Slides, Flips and Turns', book: 'Method: Concrete, Pictorial, Abstract', bc: 'Perform and describe single transformations: translations, reflections and rotations, using the first quadrant grid.', kidSummary: 'Move shapes on a grid using ordered pairs, then flip and turn them.' },
+  { id: 18, title: 'Graphs and Tables', book: 'Method: Concrete, Pictorial, Abstract', bc: 'Read and compare data in tables, bar graphs, double bar graphs, pictographs with scales and line graphs.', kidSummary: 'Read bar graphs, pictographs and tables and answer questions about the data.' },
+  { id: 19, title: 'Chance and Probability', book: 'Method: Concrete, Pictorial, Abstract', bc: 'Describe likelihood, find probabilities of simple events as fractions, and compare predictions to results.', kidSummary: 'Describe how likely something is with words and fractions, and test it with spinners, dice and coins.' },
+  { id: 20, title: 'Making Change', book: 'Method: Concrete, Pictorial, Abstract', bc: 'Add prices, make change from bills and coins, count up, and round cash totals to the nearest 5 cents.', kidSummary: 'Count up to make change and add up prices using Canadian money.' },
+  { id: 21, title: 'Budgets and Smart Spending', book: 'Method: Concrete, Pictorial, Abstract', bc: 'Create simple budgets, separate needs and wants, plan savings goals, and compare unit prices.', kidSummary: 'Plan how to earn, spend and save, and compare prices to find the best deal.' }
+]);
+Object.assign(window.MATH_META, {
+  9: { strand: 'number', calc: false, extra: false },
+  10: { strand: 'operations', calc: false, extra: false },
+  11: { strand: 'operations', calc: false, extra: false },
+  12: { strand: 'patterns', calc: false, extra: false },
+  13: { strand: 'patterns', calc: false, extra: false },
+  14: { strand: 'measurement', calc: true, extra: false },
+  15: { strand: 'measurement', calc: false, extra: false },
+  16: { strand: 'geometry', calc: false, extra: false },
+  17: { strand: 'geometry', calc: false, extra: false },
+  18: { strand: 'data', calc: true, extra: false },
+  19: { strand: 'data', calc: false, extra: false },
+  20: { strand: 'money', calc: true, extra: false },
+  21: { strand: 'money', calc: true, extra: false }
+});
+window.MATH_MODULES.forEach(function (m) { if (m.id > 8) Object.assign(m, window.MATH_META[m.id]); });
+
 /* The BC Grade 5 map. A topic is either a module id (m) or a coming soon title (soon). */
 window.MATH_STRANDS = [
   { id: 'number', name: 'Number Sense', blurb: 'Big numbers, decimals and fractions.', badge: 'bg-indigo-700 text-white', border: 'border-indigo-500',
-    topics: [ { m: 1 }, { m: 4 }, { soon: 'Equivalent fractions and benchmarks' } ] },
+    topics: [ { m: 1 }, { m: 4 }, { m: 9 } ] },
   { id: 'operations', name: 'Operations and Fluency', blurb: 'Adding, taking away, times and sharing.', badge: 'bg-emerald-600 text-white', border: 'border-emerald-500',
-    topics: [ { m: 2 }, { soon: 'Multiplication and division facts' }, { soon: 'Estimating answers' } ] },
+    topics: [ { m: 2 }, { m: 10 }, { m: 11 } ] },
   { id: 'patterns', name: 'Patterns and Equations', blurb: 'Find the rule and solve for the mystery number.', badge: 'bg-amber-500 text-slate-900', border: 'border-amber-500',
-    topics: [ { soon: 'Number patterns and tables' }, { soon: 'One step equations' } ] },
+    topics: [ { m: 12 }, { m: 13 } ] },
   { id: 'measurement', name: 'Measurement', blurb: 'Area, perimeter, time and money.', badge: 'bg-sky-600 text-white', border: 'border-sky-500',
-    topics: [ { soon: 'Area and perimeter' }, { soon: 'Elapsed time' } ] },
+    topics: [ { m: 14 }, { m: 15 } ] },
   { id: 'geometry', name: 'Geometry', blurb: 'Shapes, solids and how they move.', badge: 'bg-rose-600 text-white', border: 'border-rose-500',
-    topics: [ { soon: '2D shapes and 3D solids' }, { soon: 'Slides, flips and turns' } ] },
+    topics: [ { m: 16 }, { m: 17 } ] },
   { id: 'data', name: 'Data and Probability', blurb: 'Read graphs and guess what happens next.', badge: 'bg-teal-600 text-white', border: 'border-teal-500',
-    topics: [ { soon: 'Graphs and tables' }, { soon: 'Chance and probability' } ] },
+    topics: [ { m: 18 }, { m: 19 } ] },
   { id: 'money', name: 'Money Smart', blurb: 'Change, budgets and saving.', badge: 'bg-lime-600 text-white', border: 'border-lime-600',
-    topics: [ { soon: 'Making change' }, { soon: 'Budgets' } ] },
+    topics: [ { m: 20 }, { m: 21 } ] },
   { id: 'challenge', name: 'Singapore Challenge', blurb: 'Extra puzzles from Singapore Math. Not required for BC Grade 5, but great practice.', badge: 'bg-violet-700 text-white', border: 'border-violet-500',
     topics: [ { m: 3 }, { m: 5 }, { m: 6 }, { m: 7 }, { m: 8 } ] }
 ];

@@ -188,7 +188,11 @@
       <nav aria-label="Modules">
         <h2 class="sr-only">All 8 modules</h2>
         <ul class="space-y-2">
-          <template x-for="m in modules" :key="m.id">
+          <template x-for="st in strands" :key="st.id">
+            <li class="pt-2">
+              <p class="px-1 pb-1 text-lg font-bold text-slate-700" x-math="st.name"></p>
+              <ul class="space-y-2">
+          <template x-for="m in strandModules(st)" :key="m.id">
             <li>
               <button type="button"
                       class="w-full min-h-[64px] text-left rounded-2xl border-2 p-3 flex items-center gap-3 transition active:scale-[0.98]"
@@ -206,6 +210,9 @@
                       :class="!m.calc ? (currentModule === m.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700') : (currentModule === m.id ? 'bg-emerald-300 text-slate-900' : 'bg-emerald-100 text-emerald-800')"
                       x-math="!m.calc ? 'Mental' : 'Calc'"></span>
               </button>
+            </li>
+          </template>
+              </ul>
             </li>
           </template>
         </ul>
@@ -439,6 +446,35 @@
                       <pre class="drawing rounded-xl bg-slate-900 p-3 text-xl sm:text-3xl leading-snug font-mono text-emerald-100 max-w-full overflow-x-auto"><template x-for="(ln, li) in step().lines" :key="li"><span class="block rounded px-1" :class="li >= step().hiFrom ? 'bg-amber-300 text-slate-900' : ''" x-math="ln || ' '"></span></template></pre>
                     </template>
 
+                    <template x-if="step().kind === 'numline'">
+                      <svg viewBox="0 0 240 110" class="w-full max-w-lg" role="img" aria-label="Number line"><g x-html="nlSvg()"></g></svg>
+                    </template>
+
+                    <template x-if="step().kind === 'clock'">
+                      <div class="text-center">
+                        <svg viewBox="0 0 120 120" class="mx-auto w-56" role="img" :aria-label="'Clock showing ' + step().h + ' ' + String(step().m).padStart(2, '0')"><g x-html="clockSvg(step().h, step().m)"></g></svg>
+                        <p class="mt-1 text-3xl font-bold" x-math="step().h + ':' + String(step().m).padStart(2, '0')"></p>
+                        <p class="text-lg font-bold text-indigo-800" x-show="step().tag" x-math="step().tag"></p>
+                      </div>
+                    </template>
+
+                    <template x-if="step().kind === 'bargraph'">
+                      <div class="w-full">
+                        <p class="mb-1 text-center text-xl font-bold" x-show="step().title" x-math="step().title"></p>
+                        <div class="flex h-44 items-end justify-center gap-3 border-b-4 border-l-4 border-slate-900 px-2">
+                          <template x-for="(v, vi) in step().values" :key="vi">
+                            <div class="flex h-full flex-1 flex-col justify-end text-center">
+                              <span class="text-xl font-bold" x-math="v"></span>
+                              <div class="seg-in rounded-t-lg border-2 border-slate-900" :class="vi === step().hi ? 'bg-amber-400' : 'bg-indigo-400'" :style="'height:' + (v / step().max * 80) + '%; transform-origin: bottom; animation-delay:' + (vi * 100) + 'ms'"></div>
+                            </div>
+                          </template>
+                        </div>
+                        <div class="mt-1 flex justify-center gap-3 px-2">
+                          <template x-for="(lb, li) in step().labels" :key="li"><span class="flex-1 text-center text-base font-bold" x-math="lb"></span></template>
+                        </div>
+                      </div>
+                    </template>
+
                     <template x-if="step().kind === 'note'">
                       <div class="w-full space-y-2">
                         <p class="text-2xl font-bold text-indigo-800 fade-up" x-math="step().title"></p>
@@ -604,7 +640,7 @@
 
           <!-- Empty state for modules without content yet -->
           <div id="engine-big"
-               x-show="!activeModule().bigIdea"
+               x-show="!activeModule().bigIdea && !scenes().length"
                class="mt-4 min-h-[260px] rounded-2xl border-2 border-dashed border-indigo-300 bg-indigo-50/50 p-5 flex flex-col items-center justify-center text-center"
                data-engine="big" :data-module="currentModule">
             <div class="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 mb-3">
@@ -956,6 +992,159 @@
                   <p class="mt-3 rounded-xl bg-slate-100 p-3 text-xl font-bold" x-math="sim.ang + '° + ' + (180 - sim.ang) + '° = 180°'"></p>
                 </div>
               </template>
+
+              <!-- MODULES 10 AND 14: array and area maker -->
+              <template x-if="simGroup() === 'areagrid'">
+                <div>
+                  <p class="text-center text-3xl font-bold" x-math="sim.rows + ' × ' + sim.cols + ' = ' + (sim.rows * sim.cols)"></p>
+                  <div class="mx-auto mt-3 grid gap-1" :style="'grid-template-columns: repeat(' + sim.cols + ', minmax(0, 1fr)); width: min(100%, ' + (sim.cols * 3) + 'rem)'" role="img" :aria-label="sim.rows + ' rows of ' + sim.cols + ' squares'">
+                    <template x-for="c in (sim.rows * sim.cols)" :key="c"><span class="aspect-square rounded bg-emerald-400 border-2 border-white"></span></template>
+                  </div>
+                  <div class="mt-4 grid grid-cols-2 gap-3 text-center">
+                    <div class="rounded-xl bg-emerald-100 p-3"><p class="text-base font-bold text-slate-700">Area (squares inside)</p><p class="text-3xl font-bold text-emerald-800" x-math="(sim.rows * sim.cols) + ' square units'"></p></div>
+                    <div class="rounded-xl bg-indigo-100 p-3"><p class="text-base font-bold text-slate-700">Perimeter (way around)</p><p class="text-3xl font-bold text-indigo-800" x-math="(2 * (sim.rows + sim.cols)) + ' units'"></p></div>
+                  </div>
+                  <p class="mt-3 rounded-xl bg-slate-100 p-3 text-xl font-bold" x-math="'Perimeter = ' + sim.rows + ' + ' + sim.cols + ' + ' + sim.rows + ' + ' + sim.cols + ' = ' + (2 * (sim.rows + sim.cols))"></p>
+                </div>
+              </template>
+
+              <!-- MODULE 15: clocks -->
+              <template x-if="simGroup() === 'clock'">
+                <div>
+                  <div class="grid grid-cols-2 gap-3 text-center">
+                    <div>
+                      <p class="text-lg font-bold">Start</p>
+                      <svg viewBox="0 0 120 120" class="mx-auto w-full max-w-[11rem]" role="img" :aria-label="'Start time ' + clockText(0)"><g x-html="clockSvg(sim.ch, sim.cm)"></g></svg>
+                      <p class="text-3xl font-bold" x-math="clockText(0)"></p>
+                    </div>
+                    <div>
+                      <p class="text-lg font-bold">End</p>
+                      <svg viewBox="0 0 120 120" class="mx-auto w-full max-w-[11rem]" role="img" :aria-label="'End time ' + clockText(sim.em)"><g x-html="clockSvg(clockEnd().h, clockEnd().m)"></g></svg>
+                      <p class="text-3xl font-bold text-emerald-800" x-math="clockText(sim.em)"></p>
+                    </div>
+                  </div>
+                  <p class="mt-3 rounded-xl bg-slate-100 p-3 text-xl font-bold" x-math="'Elapsed time: ' + clockDur() + '. Start ' + clockText(0) + ', end ' + clockText(sim.em) + '.'"></p>
+                </div>
+              </template>
+
+              <!-- MODULE 12: patterns -->
+              <template x-if="simGroup() === 'pattern'">
+                <div>
+                  <div class="flex flex-wrap justify-center gap-2">
+                    <template x-for="(t, i) in patTerms()" :key="i">
+                      <div class="min-w-[4rem] rounded-xl border-4 border-indigo-500 bg-indigo-50 px-3 py-2 text-center">
+                        <p class="text-base font-bold text-slate-700" x-math="'Term ' + (i + 1)"></p>
+                        <p class="text-3xl font-bold text-indigo-800" x-math="t"></p>
+                      </div>
+                    </template>
+                  </div>
+                  <p class="mt-3 rounded-xl bg-amber-100 p-3 text-xl font-bold" x-math="patRule()"></p>
+                  <p class="mt-3 rounded-xl bg-slate-100 p-3 text-xl font-bold" x-math="'Term n = ' + sim.ps + (sim.pd >= 0 ? ' + ' : ' − ') + Math.abs(sim.pd) + ' × (n − 1). The 10th term is ' + patTerm(10) + '.'"></p>
+                </div>
+              </template>
+
+              <!-- MODULE 18: bar graph -->
+              <template x-if="simGroup() === 'bargraph'">
+                <div>
+                  <p class="text-center text-xl font-bold">Books read each day</p>
+                  <div class="mt-2 flex h-48 items-end justify-center gap-3 border-b-4 border-l-4 border-slate-900 px-2">
+                    <template x-for="(k, i) in ['g1', 'g2', 'g3', 'g4']" :key="k">
+                      <div class="flex h-full flex-1 flex-col justify-end text-center">
+                        <span class="text-xl font-bold" x-math="sim[k]"></span>
+                        <div class="rounded-t-lg border-2 border-slate-900 bg-indigo-500 transition-all duration-300" :style="'height:' + (sim[k] / 20 * 85) + '%'"></div>
+                      </div>
+                    </template>
+                  </div>
+                  <div class="mt-1 flex justify-center gap-3 px-2">
+                    <template x-for="d in ['Mon', 'Tue', 'Wed', 'Thu']" :key="d"><span class="flex-1 text-center text-lg font-bold" x-math="d"></span></template>
+                  </div>
+                  <div class="mt-3 rounded-xl bg-slate-100 p-3 text-xl font-bold space-y-1">
+                    <p x-math="'Most books: ' + graphMost()"></p>
+                    <p x-math="'Total books: ' + (sim.g1 + sim.g2 + sim.g3 + sim.g4)"></p>
+                  </div>
+                </div>
+              </template>
+
+              <!-- MODULE 19: chance -->
+              <template x-if="simGroup() === 'chance'">
+                <div>
+                  <div class="flex flex-wrap justify-center gap-2 rounded-2xl border-4 border-slate-900 bg-slate-50 p-3 min-h-[5rem]" role="img" :aria-label="'A bag with ' + sim.cr + ' red, ' + sim.cb + ' blue and ' + sim.cg + ' green counters'">
+                    <template x-for="i in sim.cr" :key="'r' + i"><span class="h-8 w-8 rounded-full border-2 border-slate-900 bg-red-500"></span></template>
+                    <template x-for="i in sim.cb" :key="'b' + i"><span class="h-8 w-8 rounded-full border-2 border-slate-900 bg-sky-500"></span></template>
+                    <template x-for="i in sim.cg" :key="'g' + i"><span class="h-8 w-8 rounded-full border-2 border-slate-900 bg-emerald-500"></span></template>
+                  </div>
+                  <p class="mt-3 text-center text-xl font-bold" x-show="chanceTotal() === 0">The bag is empty. Add some counters.</p>
+                  <div class="mt-3 space-y-2" x-show="chanceTotal() > 0">
+                    <p class="rounded-xl bg-red-100 p-3 text-xl font-bold" x-math="'Chance of red: ' + chanceFr(sim.cr) + '. That is ' + chanceWord(sim.cr)"></p>
+                    <p class="rounded-xl bg-sky-100 p-3 text-xl font-bold" x-math="'Chance of blue: ' + chanceFr(sim.cb) + '. That is ' + chanceWord(sim.cb)"></p>
+                    <p class="rounded-xl bg-emerald-100 p-3 text-xl font-bold" x-math="'Chance of green: ' + chanceFr(sim.cg) + '. That is ' + chanceWord(sim.cg)"></p>
+                  </div>
+                </div>
+              </template>
+
+              <!-- MODULE 16: shapes -->
+              <template x-if="simGroup() === 'shapes'">
+                <div>
+                  <svg viewBox="0 0 200 200" class="mx-auto w-full max-w-[16rem]" role="img" :aria-label="'A shape with ' + sim.sides + ' sides'">
+                    <polygon :points="shapePts()" fill="rgba(79,70,229,0.25)" stroke="#4338ca" stroke-width="5" stroke-linejoin="round"/>
+                  </svg>
+                  <p class="text-center text-3xl font-bold" x-math="shapeName()"></p>
+                  <div class="mt-3 grid grid-cols-2 gap-3 text-center">
+                    <div class="rounded-xl bg-amber-100 p-3"><p class="text-base font-bold text-slate-700">Sides</p><p class="text-3xl font-bold" x-math="sim.sides"></p></div>
+                    <div class="rounded-xl bg-emerald-100 p-3"><p class="text-base font-bold text-slate-700">Corners (vertices)</p><p class="text-3xl font-bold" x-math="sim.sides"></p></div>
+                  </div>
+                  <p class="mt-3 rounded-xl bg-slate-100 p-3 text-xl font-bold">A polygon always has the same number of sides and corners.</p>
+                </div>
+              </template>
+
+              <!-- MODULE 17: slide, flip, turn -->
+              <template x-if="simGroup() === 'transform'">
+                <div>
+                  <svg viewBox="0 0 210 150" class="mx-auto w-full max-w-md rounded-xl border-2 border-slate-900/20 bg-white" role="img" aria-label="A grid with a shape that is slid, flipped and turned">
+                    <g x-html="gridSvg()"></g>
+                    <polygon points="0,0 30,0 30,60 60,60 60,90 0,90" fill="rgba(100,116,139,0.35)" stroke="#475569" stroke-width="2" transform="translate(30 30)"/>
+                    <polygon points="0,0 30,0 30,60 60,60 60,90 0,90" fill="rgba(245,158,11,0.7)" stroke="#b45309" stroke-width="3" :transform="shapeTransform()"/>
+                  </svg>
+                  <p class="mt-3 rounded-xl bg-slate-100 p-3 text-xl font-bold" x-math="transformText()"></p>
+                </div>
+              </template>
+
+              <!-- MODULE 20: making change -->
+              <template x-if="simGroup() === 'change'">
+                <div>
+                  <div class="grid grid-cols-2 gap-3 text-center">
+                    <div class="rounded-xl bg-amber-100 p-3"><p class="text-base font-bold text-slate-700">Price</p><p class="text-3xl font-bold" x-math="'$' + moneyStr(changePrice())"></p></div>
+                    <div class="rounded-xl bg-indigo-100 p-3"><p class="text-base font-bold text-slate-700">You pay</p><p class="text-3xl font-bold text-indigo-800" x-math="'$' + sim.chpay"></p></div>
+                  </div>
+                  <p class="mt-3 text-center text-xl font-bold text-red-800" x-show="changeDue() < 0">Not enough money. Pay more.</p>
+                  <div x-show="changeDue() >= 0">
+                    <p class="mt-3 text-center text-3xl font-bold text-emerald-800" x-math="'Change: $' + moneyStr(changeDue())"></p>
+                    <ul class="mt-3 space-y-2">
+                      <template x-for="(c, i) in changeCoins()" :key="i"><li class="rounded-xl bg-slate-100 p-3 text-xl font-bold" x-math="c"></li></template>
+                    </ul>
+                    <p class="mt-3 rounded-xl bg-slate-100 p-3 text-xl font-bold" x-math="'Count up from $' + moneyStr(changePrice()) + ' to $' + sim.chpay + '. Or take away: $' + sim.chpay + ' − $' + moneyStr(changePrice()) + ' = $' + moneyStr(changeDue())"></p>
+                  </div>
+                </div>
+              </template>
+
+              <!-- MODULE 21: budget -->
+              <template x-if="simGroup() === 'budget'">
+                <div>
+                  <p class="text-center text-2xl font-bold" x-math="'Money in: $' + sim.inc"></p>
+                  <div class="mt-2 flex h-16 overflow-hidden rounded-xl border-4 border-slate-900" role="img" aria-label="Budget bar">
+                    <div class="flex items-center justify-center bg-amber-400 text-xl font-bold transition-all duration-300" :style="'width:' + budgetPct(sim.need) + '%'" x-math="sim.need > 0 ? '$' + sim.need : ''"></div>
+                    <div class="flex items-center justify-center border-l-4 border-slate-900 bg-rose-400 text-xl font-bold transition-all duration-300" :style="'width:' + budgetPct(sim.want) + '%'" x-math="sim.want > 0 ? '$' + sim.want : ''"></div>
+                    <div class="flex items-center justify-center border-l-4 border-slate-900 bg-emerald-400 text-xl font-bold transition-all duration-300" :style="'width:' + budgetPct(budgetSave()) + '%'" x-math="budgetSave() > 0 ? '$' + budgetSave() : ''"></div>
+                  </div>
+                  <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+                    <div class="rounded-xl bg-amber-100 p-2"><p class="text-base font-bold">Needs</p><p class="text-2xl font-bold" x-math="'$' + sim.need"></p></div>
+                    <div class="rounded-xl bg-rose-100 p-2"><p class="text-base font-bold">Wants</p><p class="text-2xl font-bold" x-math="'$' + sim.want"></p></div>
+                    <div class="rounded-xl bg-emerald-100 p-2"><p class="text-base font-bold">Saving</p><p class="text-2xl font-bold text-emerald-800" x-math="'$' + budgetSave()"></p></div>
+                  </div>
+                  <p class="mt-3 rounded-xl bg-red-100 p-3 text-xl font-bold" x-show="sim.need + sim.want > sim.inc">You planned to spend more than you have. Lower needs or wants.</p>
+                  <p class="mt-3 rounded-xl bg-slate-100 p-3 text-xl font-bold" x-math="'$' + sim.inc + ' − $' + sim.need + ' − $' + sim.want + ' = $' + budgetSave() + ' saved'"></p>
+                </div>
+              </template>
             </div>
 
             <!-- PLAIN WORDS AND CHALLENGE -->
@@ -1072,6 +1261,35 @@
 
                     <template x-if="step().kind === 'lines'">
                       <pre class="drawing rounded-xl bg-slate-900 p-3 text-xl sm:text-3xl leading-snug font-mono text-emerald-100 max-w-full overflow-x-auto"><template x-for="(ln, li) in step().lines" :key="li"><span class="block rounded px-1" :class="li >= step().hiFrom ? 'bg-amber-300 text-slate-900' : ''" x-math="ln || ' '"></span></template></pre>
+                    </template>
+
+                    <template x-if="step().kind === 'numline'">
+                      <svg viewBox="0 0 240 110" class="w-full max-w-lg" role="img" aria-label="Number line"><g x-html="nlSvg()"></g></svg>
+                    </template>
+
+                    <template x-if="step().kind === 'clock'">
+                      <div class="text-center">
+                        <svg viewBox="0 0 120 120" class="mx-auto w-56" role="img" :aria-label="'Clock showing ' + step().h + ' ' + String(step().m).padStart(2, '0')"><g x-html="clockSvg(step().h, step().m)"></g></svg>
+                        <p class="mt-1 text-3xl font-bold" x-math="step().h + ':' + String(step().m).padStart(2, '0')"></p>
+                        <p class="text-lg font-bold text-indigo-800" x-show="step().tag" x-math="step().tag"></p>
+                      </div>
+                    </template>
+
+                    <template x-if="step().kind === 'bargraph'">
+                      <div class="w-full">
+                        <p class="mb-1 text-center text-xl font-bold" x-show="step().title" x-math="step().title"></p>
+                        <div class="flex h-44 items-end justify-center gap-3 border-b-4 border-l-4 border-slate-900 px-2">
+                          <template x-for="(v, vi) in step().values" :key="vi">
+                            <div class="flex h-full flex-1 flex-col justify-end text-center">
+                              <span class="text-xl font-bold" x-math="v"></span>
+                              <div class="seg-in rounded-t-lg border-2 border-slate-900" :class="vi === step().hi ? 'bg-amber-400' : 'bg-indigo-400'" :style="'height:' + (v / step().max * 80) + '%; transform-origin: bottom; animation-delay:' + (vi * 100) + 'ms'"></div>
+                            </div>
+                          </template>
+                        </div>
+                        <div class="mt-1 flex justify-center gap-3 px-2">
+                          <template x-for="(lb, li) in step().labels" :key="li"><span class="flex-1 text-center text-base font-bold" x-math="lb"></span></template>
+                        </div>
+                      </div>
                     </template>
 
                     <template x-if="step().kind === 'note'">
@@ -1480,6 +1698,19 @@
   <script src="js/m6.js"></script>
   <script src="js/m7.js"></script>
   <script src="js/m8.js"></script>
+  <script src="js/m9.js"></script>
+  <script src="js/m10.js"></script>
+  <script src="js/m11.js"></script>
+  <script src="js/m12.js"></script>
+  <script src="js/m13.js"></script>
+  <script src="js/m14.js"></script>
+  <script src="js/m15.js"></script>
+  <script src="js/m16.js"></script>
+  <script src="js/m17.js"></script>
+  <script src="js/m18.js"></script>
+  <script src="js/m19.js"></script>
+  <script src="js/m20.js"></script>
+  <script src="js/m21.js"></script>
   <script>
     function app() {
       /* Audio state lives in closure variables, not in Alpine data.
@@ -1620,7 +1851,7 @@
         fr: { an: '', ad: '', bn: '', bd: '', op: '+', focus: 'an', result: null, error: '' },
         q: { module: 1, mode: 'practice', set: [], started: true, teach: false, idx: 0, input: '', input2: '', pick: null, status: 'ask', tries: 0, points: 0, results: [], finished: false, trap: '', msg: '', pct: 0 },
 
-        sim: { a: 12, b: 8, den: 8, num: 3, ua: 3, ub: 2, mult: 2, l: 4, w: 3, h: 2, tot: 24, grp: 4, per: 3, pct: 25, price: 40, ang: 65 },
+        sim: { a: 12, b: 8, den: 8, num: 3, ua: 3, ub: 2, mult: 2, l: 4, w: 3, h: 2, tot: 24, grp: 4, per: 3, pct: 25, price: 40, ang: 65, rows: 4, cols: 6, ch: 3, cm: 15, em: 70, ps: 5, pd: 3, g1: 6, g2: 9, g3: 4, g4: 7, cr: 3, cb: 4, cg: 2, sides: 5, tx: 3, ty: 1, rot: 0, flip: 0, chd: 6, chn: 2, chpay: 10, inc: 50, need: 20, want: 15 },
 
         basicKeys: [
           { k: 'C', label: 'C', aria: 'Clear', cls: 'bg-red-100 text-red-900' },
@@ -1893,10 +2124,12 @@
         /* =====================================================
            EXPLORE TOOLS
            ===================================================== */
+        strandModules(st) { return st.topics.filter(t => t.m).map(t => this.modules[t.m - 1]); },
         exTools() {
-          const T = { part: 'Bar model', places: 'Place value chart', divshare: 'Sharing machine', fraction: 'Fraction bar', fracamt: 'Fraction of an amount', eqfrac: 'Equal fractions', ratio: 'Ratio blocks', percent: 'Percent helper', angles: 'Angle maker', volume: 'Box builder' };
-          const M = { 1: ['places', 'part'], 2: ['divshare', 'part'], 3: ['fracamt', 'eqfrac', 'fraction'], 4: ['places', 'fraction'], 5: ['ratio'], 6: ['percent', 'fraction'], 7: ['angles'], 8: ['volume'] };
-          return (M[this.currentModule] || ['part']).map(id => ({ id: id, title: T[id] }));
+          const T = { part: 'Bar model', places: 'Place value chart', divshare: 'Sharing machine', fraction: 'Fraction bar', fracamt: 'Fraction of an amount', eqfrac: 'Equal fractions', ratio: 'Ratio blocks', percent: 'Percent helper', angles: 'Angle maker', volume: 'Box builder', areagrid: 'Area and perimeter', clock: 'Elapsed time clocks', pattern: 'Pattern maker', bargraph: 'Bar graph', chance: 'Chance bag', shapes: 'Shape builder', transform: 'Slide, flip, turn', change: 'Change maker', budget: 'Budget planner' };
+          const M = { 1: ['places', 'part'], 2: ['divshare', 'part'], 3: ['fracamt', 'eqfrac', 'fraction'], 4: ['places', 'fraction'], 5: ['ratio'], 6: ['percent', 'fraction'], 7: ['angles'], 8: ['volume'],
+            9: ['eqfrac', 'fraction'], 10: ['areagrid', 'divshare'], 11: ['places', 'part'], 12: ['pattern'], 13: ['part'], 14: ['areagrid'], 15: ['clock'], 16: ['shapes', 'volume'], 17: ['transform'], 18: ['bargraph'], 19: ['chance'], 20: ['change'], 21: ['budget', 'percent'] };
+          return (M[this.currentModule] || ['part']).map(id => ({ id: id, title: this.currentModule === 10 && id === 'areagrid' ? 'Array maker' : T[id] }));
         },
         setExTool(id) { this.exTool = id; if (id === 'fracamt' || id === 'eqfrac') this.resetSim(); },
         placeClean() {
@@ -1961,6 +2194,58 @@
           const shown = r.toLocaleString('en-CA', { minimumFractionDigits: dec, maximumFractionDigits: dec });
           return 'Look at the digit to the right. It is ' + look + ', which is ' + (look >= 5 ? '5 or more, so round up. ' : 'less than 5, so keep it the same. ') + 'It rounds to ' + shown + '.';
         },
+        clockSvg(h, m) {
+          let o = '<circle cx="60" cy="60" r="56" fill="#fff" stroke="#0f172a" stroke-width="4"/>';
+          for (let n = 1; n <= 12; n++) { const p = this.clockXY(n * 5, 44); o += '<text x="' + p.x + '" y="' + (p.y + 4) + '" font-size="11" font-weight="700" text-anchor="middle" fill="#0f172a">' + n + '</text>'; }
+          const hp = this.clockXY(((h % 12) + m / 60) * 5, 28), mp = this.clockXY(m, 42);
+          o += '<line x1="60" y1="60" x2="' + hp.x + '" y2="' + hp.y + '" stroke="#0f172a" stroke-width="5" stroke-linecap="round"/>';
+          o += '<line x1="60" y1="60" x2="' + mp.x + '" y2="' + mp.y + '" stroke="#4338ca" stroke-width="3.5" stroke-linecap="round"/>';
+          return o + '<circle cx="60" cy="60" r="3.5" fill="#0f172a"/>';
+        },
+        nlSvg() {
+          const st = this.step(), E = window.MathEngine.esc;
+          let o = '<line x1="14" y1="70" x2="226" y2="70" stroke="#0f172a" stroke-width="3" stroke-linecap="round"/>';
+          for (const tk of (st.ticks || [])) { const x = this.nlX(tk.v); o += '<line x1="' + x + '" y1="63" x2="' + x + '" y2="77" stroke="#0f172a" stroke-width="2.5"/><text x="' + x + '" y="94" font-size="12" font-weight="700" text-anchor="middle" fill="#0f172a">' + E(tk.label === undefined ? tk.v : tk.label) + '</text>'; }
+          for (const jp of (st.jumps || [])) { const a = this.nlX(jp.from), b = this.nlX(jp.to); o += '<path d="M ' + a + ' 68 Q ' + ((a + b) / 2) + ' 22 ' + b + ' 68" fill="none" stroke="#4338ca" stroke-width="3"/><text x="' + ((a + b) / 2) + '" y="30" font-size="13" font-weight="700" text-anchor="middle" fill="#3730a3">' + E(jp.label) + '</text>'; }
+          for (const mk of (st.marks || [])) { const x = this.nlX(mk.v); o += '<circle cx="' + x + '" cy="70" r="7" fill="#f59e0b" stroke="#0f172a" stroke-width="2"/><text x="' + x + '" y="50" font-size="13" font-weight="700" text-anchor="middle" fill="#b45309">' + E(mk.label) + '</text>'; }
+          return o;
+        },
+        gridSvg() {
+          let o = '';
+          for (let i = 0; i < 8; i++) o += '<line x1="' + (i * 30) + '" y1="0" x2="' + (i * 30) + '" y2="150" stroke="#cbd5e1" stroke-width="1"/>';
+          for (let i = 0; i < 6; i++) o += '<line x1="0" y1="' + (i * 30) + '" x2="210" y2="' + (i * 30) + '" stroke="#cbd5e1" stroke-width="1"/>';
+          return o;
+        },
+        nlX(v) { const st = this.step(); return +(14 + (v - st.min) / (st.max - st.min) * 212).toFixed(1); },
+        clockXY(units, r) { const a = units / 60 * 2 * Math.PI - Math.PI / 2; return { x: +(60 + r * Math.cos(a)).toFixed(1), y: +(60 + r * Math.sin(a)).toFixed(1) }; },
+        clockEnd() { const t = (this.sim.ch % 12) * 60 + this.sim.cm + this.sim.em; const hh = Math.floor(t / 60) % 12; return { h: hh === 0 ? 12 : hh, m: t % 60 }; },
+        clockText(add) {
+          const t = (this.sim.ch % 12) * 60 + this.sim.cm + add; const hh = Math.floor(t / 60) % 12;
+          return (hh === 0 ? 12 : hh) + ':' + String(t % 60).padStart(2, '0');
+        },
+        clockDur() { const e = this.sim.em, h = Math.floor(e / 60), m = e % 60; return (h ? h + (h === 1 ? ' hour' : ' hours') : '') + (h && m ? ' ' : '') + (m ? m + ' minutes' : ''); },
+        patTerm(n) { return this.sim.ps + this.sim.pd * (n - 1); },
+        patTerms() { const out = []; for (let i = 1; i <= 6; i++) out.push(this.patTerm(i)); return out; },
+        patRule() { const d = this.sim.pd; return d === 0 ? 'Rule: the number stays at ' + this.sim.ps + '.' : 'Rule: start at ' + this.sim.ps + ' and ' + (d > 0 ? 'add ' + d : 'subtract ' + Math.abs(d)) + ' each time. It is ' + (d > 0 ? 'an increasing' : 'a decreasing') + ' pattern.'; },
+        graphMost() { const s = this.sim, v = [s.g1, s.g2, s.g3, s.g4], mx = Math.max.apply(null, v), d = ['Monday', 'Tuesday', 'Wednesday', 'Thursday']; const w = d.filter((x, i) => v[i] === mx); return w.join(' and ') + ' (' + mx + ')'; },
+        chanceTotal() { return this.sim.cr + this.sim.cb + this.sim.cg; },
+        chanceFr(n) { const t = this.chanceTotal(); if (!t) return '0'; if (n === 0) return '0/' + t; const g = this.gcd(n, t); return (n / g) + '/' + (t / g); },
+        chanceWord(n) { const t = this.chanceTotal(); if (!t || n === 0) return 'impossible.'; if (n === t) return 'certain.'; const p = n / t; return p < 0.5 ? 'unlikely.' : (p === 0.5 ? 'equally likely as not.' : 'likely.'); },
+        shapeName() { return { 3: 'Triangle', 4: 'Quadrilateral', 5: 'Pentagon', 6: 'Hexagon', 7: 'Heptagon', 8: 'Octagon' }[this.sim.sides] || ''; },
+        shapePts() { const n = this.sim.sides, pts = []; for (let i = 0; i < n; i++) { const a = i / n * 2 * Math.PI - Math.PI / 2; pts.push((100 + 85 * Math.cos(a)).toFixed(1) + ',' + (100 + 85 * Math.sin(a)).toFixed(1)); } return pts.join(' '); },
+        shapeTransform() { const s = this.sim; return 'translate(' + (30 + s.tx * 30) + ' ' + (30 + s.ty * 30) + ') translate(30 45) rotate(' + (s.rot * 90) + ') scale(' + (s.flip ? -1 : 1) + ' 1) translate(-30 -45)'; },
+        transformText() { const s = this.sim, p = []; if (s.tx || s.ty) p.push('slid ' + s.tx + ' right and ' + s.ty + ' down'); if (s.flip) p.push('flipped'); if (s.rot) p.push('turned ' + s.rot + ' quarter ' + (s.rot === 1 ? 'turn' : 'turns')); return p.length ? 'The shape was ' + p.join(', then ') + '.' : 'The shape has not moved yet.'; },
+        moneyStr(c) { return c % 100 === 0 ? String(c / 100) : (c / 100).toFixed(2); },
+        changePrice() { return this.sim.chd * 100 + this.sim.chn * 5; },
+        changeDue() { return this.sim.chpay * 100 - this.changePrice(); },
+        changeCoins() {
+          let c = this.changeDue(); const out = [];
+          const parts = [['$5 bill', 500], ['$2 toonie', 200], ['$1 loonie', 100], ['25 cent quarter', 25], ['10 cent dime', 10], ['5 cent nickel', 5]];
+          for (const [n, v] of parts) { const k = Math.floor(c / v); if (k > 0) { out.push(k + ' × ' + n); c -= k * v; } }
+          return out.length ? out : ['No change. You paid the exact amount.'];
+        },
+        budgetSave() { return Math.max(0, this.sim.inc - this.sim.need - this.sim.want); },
+        budgetPct(v) { return Math.min(100, v / Math.max(this.sim.inc, this.sim.need + this.sim.want) * 100); },
         pctAmount() { return String(Number((this.sim.price * this.sim.pct / 100).toFixed(2))); },
         pctLeft() { return String(Number((this.sim.price - this.sim.price * this.sim.pct / 100).toFixed(2))); },
         angPt(r) { const a = this.sim.ang * Math.PI / 180; return { x: +(120 + r * Math.cos(a)).toFixed(1), y: +(110 - r * Math.sin(a)).toFixed(1) }; },
@@ -2307,6 +2592,47 @@
             { key: 'num', label: 'Colored Slices (Numerator)', min: 0, max: this.sim.den }
           ];
           if (g === 'places') return [];
+          if (g === 'areagrid') return [
+            { key: 'rows', label: 'Rows (height)', min: 1, max: 12 },
+            { key: 'cols', label: 'Columns (width)', min: 1, max: 12 }
+          ];
+          if (g === 'clock') return [
+            { key: 'ch', label: 'Start hour', min: 1, max: 12 },
+            { key: 'cm', label: 'Start minutes', min: 0, max: 59 },
+            { key: 'em', label: 'Minutes that pass', min: 5, max: 300 }
+          ];
+          if (g === 'pattern') return [
+            { key: 'ps', label: 'Start number', min: 0, max: 50 },
+            { key: 'pd', label: 'Change each time (negative means smaller)', min: -9, max: 12 }
+          ];
+          if (g === 'bargraph') return [
+            { key: 'g1', label: 'Monday', min: 0, max: 20 },
+            { key: 'g2', label: 'Tuesday', min: 0, max: 20 },
+            { key: 'g3', label: 'Wednesday', min: 0, max: 20 },
+            { key: 'g4', label: 'Thursday', min: 0, max: 20 }
+          ];
+          if (g === 'chance') return [
+            { key: 'cr', label: 'Red counters', min: 0, max: 10 },
+            { key: 'cb', label: 'Blue counters', min: 0, max: 10 },
+            { key: 'cg', label: 'Green counters', min: 0, max: 10 }
+          ];
+          if (g === 'shapes') return [{ key: 'sides', label: 'Number of sides', min: 3, max: 8 }];
+          if (g === 'transform') return [
+            { key: 'tx', label: 'Slide right (squares)', min: 0, max: 4 },
+            { key: 'ty', label: 'Slide down (squares)', min: 0, max: 2 },
+            { key: 'rot', label: 'Quarter turns (0 to 3)', min: 0, max: 3 },
+            { key: 'flip', label: 'Flip (0 is no, 1 is yes)', min: 0, max: 1 }
+          ];
+          if (g === 'change') return [
+            { key: 'chd', label: 'Price in dollars', min: 0, max: 40 },
+            { key: 'chn', label: 'Extra nickels in the price', min: 0, max: 19 },
+            { key: 'chpay', label: 'Dollars you hand over', min: 1, max: 100 }
+          ];
+          if (g === 'budget') return [
+            { key: 'inc', label: 'Money you have (dollars)', min: 10, max: 200 },
+            { key: 'need', label: 'Needs (dollars)', min: 0, max: 200 },
+            { key: 'want', label: 'Wants (dollars)', min: 0, max: 200 }
+          ];
           if (g === 'divshare') return [
             { key: 'tot', label: 'How many to share', min: 2, max: 60 },
             { key: 'grp', label: 'How many groups', min: 2, max: 10 }
@@ -2379,6 +2705,15 @@
         simIntro() {
           const g = this.simGroup();
           if (g === 'places') return 'Type any number and see where every digit lives. Then try rounding it.';
+          if (g === 'areagrid') return 'Change the rows and columns. Watch the area and the perimeter change.';
+          if (g === 'clock') return 'Set a start time, then slide the minutes that pass. See the end time.';
+          if (g === 'pattern') return 'Pick a start number and a change. The pattern grows or shrinks by the same amount each time.';
+          if (g === 'bargraph') return 'Slide each bar to change the data. Read the graph to answer questions.';
+          if (g === 'chance') return 'Fill a bag with counters. See the chance of picking each color.';
+          if (g === 'shapes') return 'Change the number of sides and see the name of the shape.';
+          if (g === 'transform') return 'Slide, flip and turn the orange shape. The grey shape stays where it started.';
+          if (g === 'change') return 'Set a price and the money you hand over. See the change and the coins.';
+          if (g === 'budget') return 'Decide how much goes to needs, wants and saving.';
           if (g === 'divshare') return 'Pick how many things to share and how many groups. Watch the sharing happen.';
           if (g === 'fracamt') return 'Split an amount into equal groups, then take some of the groups.';
           if (g === 'eqfrac') return 'Multiply the top and the bottom by the same number and watch the amount stay the same.';
@@ -2391,6 +2726,15 @@
         },
         simPlain() {
           const s = this.sim, g = this.simGroup();
+          if (g === 'areagrid') return 'Area counts the squares inside. Perimeter is the distance around the outside. A shape with the same area can have different perimeters.';
+          if (g === 'clock') return 'Elapsed time is how much time passes between a start and an end. Count up in chunks: first to the next hour, then the rest.';
+          if (g === 'pattern') return 'A pattern has a rule. Here you start at ' + s.ps + ' and ' + (s.pd >= 0 ? 'add ' + s.pd : 'take away ' + Math.abs(s.pd)) + ' every time.';
+          if (g === 'bargraph') return 'The taller the bar, the bigger the number. Compare bars to see which day had the most.';
+          if (g === 'chance') return 'The chance of a color is the number of counters of that color out of all the counters. Write it as a fraction.';
+          if (g === 'shapes') return 'A polygon is a flat shape with straight sides. A shape with 3 sides is a triangle, with 4 sides a quadrilateral, and so on.';
+          if (g === 'transform') return 'A slide moves every point the same distance. A flip makes a mirror picture. A turn spins the shape around a point. The shape stays the same size.';
+          if (g === 'change') return 'Change is what the cashier gives back. Count up from the price to the money you handed over.';
+          if (g === 'budget') return 'A budget is a plan. Needs come first, then wants, and whatever is left goes to saving.';
           if (g === 'places') return 'Each digit has a home. The home decides what the digit is worth. Moving a digit one home to the left makes it worth ten times more.';
           if (g === 'divshare') return 'Sharing ' + s.tot + ' things into ' + s.grp + ' equal groups gives ' + Math.floor(s.tot / s.grp) + ' in each group.' + (s.tot % s.grp ? ' There are ' + (s.tot % s.grp) + ' left over. That leftover is called the remainder. It is always smaller than the number of groups.' : ' Nothing is left over.');
           if (g === 'fracamt') return 'The bottom number, ' + s.den + ', cuts ' + (s.den * s.per) + ' into ' + s.den + ' equal groups of ' + s.per + '. The top number, ' + s.num + ', says take ' + s.num + ' of the groups. That is ' + (s.num * s.per) + '.';
@@ -2404,6 +2748,15 @@
         },
         simTry() {
           const g = this.simGroup();
+          if (g === 'areagrid') return 'Make a rectangle with area 12. How many different ones can you make? Which has the longest perimeter?';
+          if (g === 'clock') return 'Start at 3:15 and let 70 minutes pass. Then try 150 minutes.';
+          if (g === 'pattern') return 'Make a pattern that gets smaller. What is the 10th term? Then make one that is equal each time.';
+          if (g === 'bargraph') return 'Make Wednesday the tallest bar. Then make all the bars the same height.';
+          if (g === 'chance') return 'Make a bag where red is certain. Then make one where red is impossible.';
+          if (g === 'shapes') return 'Which shapes have 5 sides? What do you call a shape with 8 sides?';
+          if (g === 'transform') return 'Try a flip only, then a turn only. Which one changes the way the shape faces?';
+          if (g === 'change') return 'Set the price to $6 and hand over $10. Then try $20. How does the change change?';
+          if (g === 'budget') return 'Aim to save at least 20 percent of your money. How low must wants be?';
           if (g === 'places') return 'Type 4589201 and round to the nearest hundred thousand. Then type 3.482 and round to the nearest tenth.';
           if (g === 'divshare') return 'Share 25 into 4 groups. What is left over? Now try 24 into 4. What changes?';
           if (g === 'fracamt') return 'Set the bottom to 4, the top to 3 and each group to 6. Now change the top to 2. What happens to the answer?';
